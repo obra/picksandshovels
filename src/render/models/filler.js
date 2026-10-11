@@ -2,6 +2,7 @@
 // shops. Variant and colors come from the plot seed.
 
 import { P } from '../palette.js';
+import { GOLD_RUSH_SIGNS } from '../../content/flavor.js';
 import {
   rnd, choose, result, buildingColor, lot, tree, palm, bush, car, person, acUnit, waterTank, awning,
 } from './common.js';
@@ -93,7 +94,7 @@ export function shop(vb, seed) {
   });
 }
 
-const WEST_SIGNS = ['SALOON', 'ASSAY OFFICE', 'GPU EMPORIUM', 'CLAIMS', 'DRY GOODS', 'STABLES', 'EUREKA', 'GOLD BUYER'];
+const WEST_SIGNS = GOLD_RUSH_SIGNS;
 const WOOD = [0xb5793f, 0xa0663a, 0xc68d55, 0x8f5a33];
 
 // An 1849 false-front: a flat facade taller than the building behind it.

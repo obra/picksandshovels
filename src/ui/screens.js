@@ -195,6 +195,7 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
     ),
   );
   const el = modal(root, card);
+  el.classList.add('soft');
   // Typewriter the epitaph, one line at a time.
   let i = 0;
   const next = () => {

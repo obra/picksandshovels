@@ -188,18 +188,56 @@ function boatGeometry(kind) {
   return vb.build();
 }
 
+// A rounded puff: a cross of boxes so the corners read as curves.
+function puff(vb, x, y, z, w, h, d, top, side) {
+  const c = Math.min(w, d) * 0.22;
+  vb.box(x - w / 2 + c, y, z - d / 2, x + w / 2 - c, y + h, z + d / 2, top, { side, bottom: true });
+  vb.box(x - w / 2, y + h * 0.15, z - d / 2 + c, x + w / 2, y + h * 0.85, z + d / 2 - c, top, { side, bottom: true });
+}
+
 function cloudGeometry(seed) {
   const vb = new VoxelBuilder();
   const n = 3 + (seed % 3);
-  const base = 0.35;
-  // A flat-bottomed cumulus: a wide base slab with puffs stacked on top.
-  vb.box(-n * 0.45, 0, -0.55, n * 0.45, base, 0.55, P.white, { side: 0xdfe9f7, bottom: true });
+  const side = 0xe6eefa;
+  // Flat-bottomed cumulus: a wide base with rounded puffs, tallest in the middle.
+  puff(vb, 0, 0, 0, n * 0.8, 0.4, 1.0, P.white, side);
   for (let i = 0; i < n; i++) {
-    const x = (i - (n - 1) / 2) * 0.75;
-    const r = 0.35 + ((seed * 7 + i * 5) % 4) * 0.08;
-    vb.box(x - r, base, -r * 0.9, x + r, base + r * 1.1, r * 0.9, P.white, { side: 0xeef3fb });
-    if ((seed + i) % 2) vb.box(x - r * 0.55, base + r * 1.1, -r * 0.5, x + r * 0.55, base + r * 1.6, r * 0.5, P.white, { side: 0xeef3fb });
+    const t = n === 1 ? 0 : i / (n - 1) - 0.5;
+    const x = t * n * 0.6;
+    const r = 0.75 - Math.abs(t) * 0.5 + ((seed * 7 + i * 5) % 3) * 0.06;
+    puff(vb, x, 0.3, 0, r * 1.2, r, r * 1.1, P.white, side);
+    if (Math.abs(t) < 0.3) puff(vb, x + 0.1, 0.3 + r * 0.8, 0, r * 0.8, r * 0.6, r * 0.7, P.white, side);
   }
+  return vb.build();
+}
+
+// An old prospector and his mule, still looking for gold in all this.
+function prospectorGeometry() {
+  const vb = new VoxelBuilder();
+  // Prospector.
+  vb.box(-0.03, 0, -0.025, 0.03, 0.08, 0.025, 0x5a4a8a);
+  vb.box(-0.04, 0.08, -0.03, 0.04, 0.17, 0.03, 0xb5452e);
+  vb.box(-0.028, 0.17, -0.028, 0.028, 0.22, 0.028, 0xf2c08f);
+  vb.box(-0.03, 0.15, 0.022, 0.03, 0.19, 0.04, 0xd8d8d8); // the beard
+  vb.box(-0.06, 0.22, -0.06, 0.06, 0.235, 0.06, 0x7a5030); // hat brim
+  vb.box(-0.03, 0.235, -0.03, 0.03, 0.27, 0.03, 0x7a5030);
+  vb.box(-0.06, 0.12, -0.005, 0.07, 0.13, 0.005, 0x8a5a33); // pick handle
+  vb.box(0.05, 0.1, -0.01, 0.075, 0.16, 0.01, P.steel); // pick head
+  // Mule.
+  const mx = -0.3;
+  vb.box(mx - 0.12, 0.07, -0.05, mx + 0.12, 0.17, 0.05, 0x8a7a6a);
+  vb.box(mx + 0.1, 0.15, -0.03, mx + 0.18, 0.22, 0.03, 0x8a7a6a);
+  vb.box(mx + 0.12, 0.22, -0.03, mx + 0.14, 0.27, -0.01, 0x8a7a6a);
+  vb.box(mx + 0.12, 0.22, 0.01, mx + 0.14, 0.27, 0.03, 0x8a7a6a);
+  for (const dx of [-0.1, 0.08]) {
+    vb.box(mx + dx, 0, -0.045, mx + dx + 0.025, 0.07, -0.02, 0x6a5a4a);
+    vb.box(mx + dx, 0, 0.02, mx + dx + 0.025, 0.07, 0.045, 0x6a5a4a);
+  }
+  // Saddlebags: one full of GPUs, naturally.
+  vb.box(mx - 0.06, 0.1, -0.075, mx + 0.06, 0.16, -0.05, 0xc68d55);
+  vb.box(mx - 0.06, 0.1, 0.05, mx + 0.06, 0.16, 0.075, P.ink);
+  vb.box(mx - 0.04, 0.12, 0.075, mx + 0.04, 0.135, 0.078, P.gpuGreen, { emit: 2 });
+  vb.box(mx - 0.03, 0.17, -0.03, mx + 0.03, 0.2, 0.03, 0xc8c0b0); // bedroll
   return vb.build();
 }
 
@@ -360,6 +398,11 @@ export class Life {
       this.clouds.push(m);
     }
 
+    // The prospector walks the south beach, back and forth, forever.
+    this.prospector = new THREE.Mesh(prospectorGeometry(), mat);
+    this.prospector.userData = { x: 10, dir: 1, pause: 0 };
+    this.root.add(this.prospector);
+
     // The VC blimp.
     this.blimp = new THREE.Mesh(blimpGeometry(), mat);
     this.blimp.visible = false;
@@ -468,6 +511,17 @@ export class Life {
       b.mesh.position.set(x, -0.42 + Math.sin(time * 2 + b.r) * 0.02, z);
       b.mesh.rotation.y = -b.a - (b.speed > 0 ? Math.PI / 2 : -Math.PI / 2);
     }
+
+    const pr = this.prospector.userData;
+    if (pr.pause > 0) pr.pause -= dt;
+    else if (!this.frozen) {
+      pr.x += pr.dir * dt * 0.25;
+      if (pr.x > 21 || pr.x < 8) pr.dir *= -1;
+      if (Math.random() < dt * 0.08) pr.pause = 2 + Math.random() * 3; // panning for gold
+    }
+    const walking = pr.pause <= 0 && !this.frozen;
+    this.prospector.position.set(pr.x, -0.18 + (walking ? Math.abs(Math.sin(time * 7)) * 0.015 : 0), 28.55);
+    this.prospector.rotation.y = pr.dir > 0 ? 0 : Math.PI;
 
     for (const c of this.clouds) {
       c.position.x += dt * 0.35;

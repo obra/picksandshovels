@@ -15,7 +15,7 @@ import { B } from '../src/sim/balance.js';
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
-  console.log('usage: simulate.mjs [bot] [seeds] [-v]\nbots: idle clicker greedy balanced safety');
+  console.log('usage: simulate.mjs [bot] [seeds] [-v]\nbots: idle clicker greedy balanced curator kingmaker safety');
   process.exit(0);
 }
 const verbose = args.includes('-v');
@@ -134,6 +134,40 @@ const BOTS = {
       }
     },
   }),
+  // Balanced, plus steering: favor the most careful lab, embargo the two most reckless.
+  curator: () => {
+    const base = BOTS.balanced();
+    let steered = false;
+    return {
+      hands: base.hands,
+      act(s) {
+        if (!steered) {
+          steered = true;
+          const byReck = content.labs.slice().sort((a, b) => a.reckless - b.reckless);
+          sim.setLabStance(s, byReck[0].id, 'favored');
+          sim.setLabStance(s, byReck[byReck.length - 1].id, 'embargo');
+          sim.setLabStance(s, byReck[byReck.length - 2].id, 'embargo');
+        }
+        base.act(s);
+      },
+    };
+  },
+  // Balanced, but sells everything to the single most reckless lab.
+  kingmaker: () => {
+    const base = BOTS.balanced();
+    let steered = false;
+    return {
+      hands: base.hands,
+      act(s) {
+        if (!steered) {
+          steered = true;
+          const worst = content.labs.slice().sort((a, b) => b.reckless - a.reckless)[0];
+          for (const l of content.labs) if (l.id !== worst.id) sim.setLabStance(s, l.id, 'embargo');
+        }
+        base.act(s);
+      },
+    };
+  },
   safety: () => ({
     hands: makeHands({ attention: 0.75, clicksPerSec: 3, reaction: 2 }),
     act(s) {

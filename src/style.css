@@ -281,6 +281,7 @@ button { font: inherit; color: inherit; }
 .sprite { width: 100%; height: 100%; image-rendering: pixelated; }
 .title-logo .mark { background: var(--yellow); border: 3px solid var(--ink); padding: 6px; width: 64px; height: 64px; box-shadow: var(--shadow-sm); }
 .modal.clear { background: transparent; }
+.modal.soft { background: rgba(20, 21, 30, 0.18); }
 .screen.title { width: min(640px, 96vw); }
 .title-h1 { font-family: var(--display); font-size: clamp(22px, 5vw, 40px); line-height: 1.15; margin: 0; text-shadow: 3px 3px 0 var(--yellow); }
 .tagline { font-size: 21px; margin: 16px auto 8px; max-width: 560px; min-height: 52px; }
@@ -332,7 +333,7 @@ button { font: inherit; color: inherit; }
   .money .cash { font-size: 15px; }
   .doom-pct { font-size: 14px; min-width: 50px; }
   .meter { grid-template-columns: 80px 1fr 30px; }
-  .shop { top: auto; bottom: 38px; left: 0; right: 0; width: auto; height: 50vh; transform: translateY(calc(100% + 10px)); transition: transform 200ms steps(4); z-index: 6; }
+  .shop { top: auto; bottom: 38px; left: 0; right: 0; width: auto; height: 50vh; transform: translateY(calc(100% + 60px)); transition: transform 200ms steps(4); z-index: 6; }
   .shop.open { transform: none; }
   .shop-toggle { display: inline-flex; position: absolute; right: 8px; bottom: 48px; z-index: 7; }
   .abilities { bottom: 48px; left: 6px; gap: 6px; }
