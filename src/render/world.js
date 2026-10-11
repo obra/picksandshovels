@@ -178,6 +178,7 @@ export class World {
     this.ship.visible = false;
     this.city.sync(state, false);
     this.stage.attract = false;
+    this.stage.snapYaw();
     this.stage.zoomGoal = 1;
     this.stage.goal.set(0, 0, 0);
   }

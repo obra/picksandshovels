@@ -144,7 +144,15 @@ export class Stage {
   }
 
   rotate(dir) {
+    this.snapYaw();
     this.yawGoal += (dir * Math.PI) / 2;
+  }
+
+  // Back to the nearest true-isometric angle (45° + k·90°), where the pixel
+  // lines are clean 2:1.
+  snapYaw() {
+    const q = Math.PI / 2;
+    this.yawGoal = Math.PI / 4 + Math.round((this.yawGoal - Math.PI / 4) / q) * q;
   }
 
   focus(x, z) {
