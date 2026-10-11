@@ -345,6 +345,15 @@ export class Game {
         audio.sfx('resolve', { pitch: f.tier - 1 });
         this.targets.floaterAt(f.at, f.auto ? 'INTERN FIXED IT' : f.fix || 'FIXED', f.auto ? 'good' : 'quip');
         break;
+      case 'overseasDrop': {
+        audio.sfx('glitch');
+        audio.sfx('alarm');
+        this.notify.banner('boss', `OPEN WEIGHTS DROP #${f.n}`, `${f.lab} releases ${f.model}`, `"${f.tagline}"`, 5500);
+        const hl = CONTENT.overseas.headlines;
+        this.ticker.breaking(hl[(f.n - 1) % hl.length]);
+        this.notify.toast('MARKETS', 'GPU demand -30% and incidents up for 30s. The weights are everywhere now.', 'skull', 6000);
+        break;
+      }
       case 'combo':
         audio.sfx('coin', { pitch: Math.min(12, f.combo - 2) });
         this.targets.floaterAt(f.at, `COMBO ×${f.combo}! +${money(f.cash)}`, 'gold');

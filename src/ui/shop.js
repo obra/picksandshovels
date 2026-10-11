@@ -58,6 +58,7 @@ export class Shop {
     for (const b of sim.content.buildings) this.rows.push(this.makeRow(b, b.cat, false));
     for (const u of sim.content.upgrades) this.rows.push(this.makeRow(u, 'upgrades', true));
     this.labRows = sim.content.labs.map((lab, i) => this.makeLabRow(lab, i));
+    this.overseasRow = sim.content.overseas ? this.makeOverseasRow(sim.content.overseas.lab) : null;
     this.setTab('compute');
   }
 
@@ -85,6 +86,25 @@ export class Shop {
     );
     this.list.append(el);
     return { lab, i, el, capFill, capVal, crown, tokens, model, favor, embargo, share: el.querySelector('.share') };
+  }
+
+  // DeepSeep: not a customer, so no buttons. Just a reminder that it exists.
+  makeOverseasRow(lab) {
+    const status = h('div.tok');
+    const model = h('div.mdl');
+    const el = h(
+      'div.lab.overseas',
+      { 'data-cat': 'labs', style: { order: '99' } },
+      h('div.lab-top', {}, h('span.swatch', { style: { background: lab.color } }), h('span.lab-name', {}, lab.name), h('span.crown.open', {}, 'OPEN WEIGHTS')),
+      h('div.lab-meta', {}, h('span.culture', {}, 'Overseas · not your customer · cannot be embargoed')),
+      status,
+      model,
+    );
+    el.addEventListener('mouseenter', () =>
+      this.desc.replaceChildren(h('b', {}, lab.name.toUpperCase()), `"${lab.slogan}" After every frontier release from the second on, DeepSeep drops open weights: GPU demand crashes, incidents spike, and the doom floor rises for good.`),
+    );
+    this.list.append(el);
+    return { el, status, model };
   }
 
   onStance(labId, stance) {
@@ -129,11 +149,18 @@ export class Shop {
     setText(this.hint, TABS.find((t) => t.cat === cat).hint);
     for (const r of this.rows) r.el.style.display = r.cat === cat ? '' : 'none';
     for (const r of this.labRows || []) r.el.style.display = cat === 'labs' ? '' : 'none';
+    if (this.overseasRow) this.overseasRow.el.style.display = cat === 'labs' ? '' : 'none';
     this.list.scrollTop = 0;
   }
 
   updateLabs(s) {
     const d = this.sim.derived(s);
+    if (this.overseasRow) {
+      const o = s.overseas;
+      const drops = this.sim.content.overseas.drops;
+      setText(this.overseasRow.status, o.pending ? `Next drop in ~${Math.ceil(o.pending.in)}s` : o.drops ? `${o.drops} drop${o.drops > 1 ? 's' : ''} so far · doom floor +${s.proliferation.toFixed(1)}` : 'Waiting for the frontier to show the way');
+      setText(this.overseasRow.model, o.drops ? `Latest: ${drops[(o.drops - 1) % drops.length].name}` : '');
+    }
     const order = this.labRows.slice().sort((a, b) => s.labs[b.i].cap - s.labs[a.i].cap);
     order.forEach((r, rank) => {
       const lab = s.labs[r.i];

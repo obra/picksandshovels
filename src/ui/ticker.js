@@ -41,6 +41,7 @@ export class Ticker {
       pools.push(band, band, H.eras[s.era]);
       if (s.hype < 25) pools.push(H.winter, H.winter);
       if (s.hype > 80) pools.push(H.boom);
+      if (s.overseas?.drops > 0 && this.content.overseas) pools.push(this.content.overseas.headlines);
     }
     for (let tries = 0; tries < 8; tries++) {
       const pool = pools[Math.floor(Math.random() * pools.length)];

@@ -15,6 +15,7 @@ import { voxelMaterial } from './material.js';
 import { LOT } from './terrain.js';
 
 const DAY_SECONDS = 80;
+const GRID_EDGE = 35;
 const KIND_SMOKE = { bio: 0x8fdc5a, cyber: 0x2f6a3a, escape: 0x9a4a8c, rsi: 0x6a4aa8 };
 
 function dayCurve(phase) {
@@ -69,6 +70,69 @@ export class World {
     this.crown.visible = false;
     this.stage.scene.add(this.crown);
     this.labExhaust = map.labs.map(() => 0);
+
+    // DeepSeep's cargo ship: sails in from the diorama edge, leaks weights.
+    const svb = new VoxelBuilder();
+    svb.box(-1.6, -0.3, -0.42, 1.4, 0.18, 0.42, 0x3a2a2e, { side: 0x6a1f24 });
+    svb.box(1.4, -0.2, -0.3, 1.8, 0.18, 0.3, 0x3a2a2e, { side: 0x6a1f24 });
+    svb.box(-1.6, -0.3, -0.43, 1.8, -0.18, 0.43, P.red);
+    svb.box(-1.5, 0.18, -0.36, -0.9, 0.85, 0.36, P.white);
+    svb.windows(-1.5, 0.3, -0.36, -0.9, 0.85, 0.36, { seed: 77, floorH: 0.18, colors: [P.windowLit] });
+    svb.box(-1.3, 0.85, -0.06, -1.15, 1.25, 0.06, P.red);
+    const crate = [0x3f7ff2, 0xff9a3c, 0x3fbf6a, 0xffd23f, 0x8e93a3];
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) {
+      const x = -0.75 + i * 0.5;
+      svb.box(x, 0.18, -0.36 + j * 0.37, x + 0.46, 0.46, -0.01 + j * 0.37, crate[(i + j * 2) % crate.length]);
+    }
+    svb.box(-0.25, 0.46, -0.36, 0.71, 0.76, 0.36, P.weights, { emit: 2 });
+    svb.panel('+z', 0.36, -0.1, 0.52, 0.56, 0.7, P.white, 2);
+    this.ship = new THREE.Mesh(svb.build(), voxelMaterial());
+    this.ship.visible = false;
+    this.stage.scene.add(this.ship);
+    this.shipT = -1;
+  }
+
+  // The ship's voyage: in from the west edge, park off the south beach while
+  // weights leak into town, then sail off east.
+  updateShip(dt) {
+    if (this.shipT < 0) return;
+    this.shipT += dt;
+    const t = this.shipT;
+    const z = 32.6 + OFFSET;
+    let x;
+    if (t < 7) x = -6 + (t / 7) * 18;
+    else if (t < 12) {
+      x = 12;
+      if (Math.random() < dt * 14) this.leakWeights();
+    } else x = 12 + (t - 12) * 3;
+    const gx = x + OFFSET;
+    this.ship.visible = x < GRID_EDGE;
+    this.ship.position.set(gx, -0.3 + Math.sin(this.time * 1.7) * 0.04, z);
+    if (x >= GRID_EDGE) {
+      this.ship.visible = false;
+      this.shipT = -1;
+    }
+  }
+
+  leakWeights() {
+    const from = this.ship.position;
+    const plot = this.map.plots[Math.floor(Math.random() * this.map.plots.length)];
+    const tx = plot.x + OFFSET;
+    const tz = plot.z + OFFSET;
+    const T = 1.4;
+    const g = 6;
+    const sy = from.y + 0.8;
+    this.fx.spawn(from.x, sy, from.z, {
+      vx: (tx - from.x) / T,
+      vz: (tz - from.z) / T,
+      vy: (0.5 - sy + 0.5 * g * T * T) / T,
+      g: -g,
+      life: T + 0.6,
+      size: 0.18,
+      color: P.weights,
+      spin: 6,
+      floor: 0.3,
+    });
   }
 
   // Lab exhaust (token burn) and the frontier crown.
@@ -110,6 +174,8 @@ export class World {
     this.tumbleweeds = [];
     this.life.frozen = false;
     this.life.panic = 0;
+    this.shipT = -1;
+    this.ship.visible = false;
     this.city.sync(state, false);
     this.stage.attract = false;
     this.stage.zoomGoal = 1;
@@ -166,6 +232,7 @@ export class World {
     this.burning = this.burning.filter((b) => b.left > 0);
 
     this.updateLabs(dt, state, title || this.ending ? null : derived);
+    this.updateShip(dt);
     this.updateEnding(dt, state);
     this.life.update(dt, this.time, state && !title ? state.blimp : null);
     this.city.update(dt);
@@ -234,6 +301,10 @@ export class World {
         U.uFlash.value = 0.25;
         break;
       }
+      case 'overseasDrop':
+        this.shipT = 0;
+        U.uFlash.value = Math.max(U.uFlash.value, 0.2);
+        break;
       case 'blimpClicked': {
         const b = this.life.blimpPos;
         this.fx.burst(b.x, b.y - 0.6, b.z, [P.yellow, 0xffe382, 0xd9a520], 34, 3);

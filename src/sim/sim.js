@@ -71,6 +71,8 @@ export function createSim(content) {
         releases: 0,
       })),
       plots: MAP.plots.map((p) => ({ id: p.id, filler: p.filler, protected: p.protected, bId: null, level: 0 })),
+      overseas: { pending: null, drops: 0 },
+      proliferation: 0,
       incidents: [],
       combo: 0,
       lastFixT: -1e9,
@@ -261,7 +263,7 @@ export function createSim(content) {
       autoResolve,
       doomDamp,
       doomRate,
-      doomFloor: s.cap * B.doomFloorPerCap * upgradeProduct(s, 'floorMult'),
+      doomFloor: s.cap * B.doomFloorPerCap * upgradeProduct(s, 'floorMult') + (s.proliferation || 0),
       labShare,
       labShares,
       labBaseShares,
@@ -564,6 +566,9 @@ export function createSim(content) {
     addCash(s, derived(s).revenue * B.releaseRevenueSecs);
     addDoom(s, B.releaseDoom, ERA_CAUSE[s.era]);
     emit(s, 'release', { n: s.releases, lab: lab.name, labId: lab.id, model: model.name, tagline: model.tagline });
+    if (content.overseas && s.releases >= B.overseas.afterRelease && !s.overseas.pending) {
+      s.overseas.pending = { in: randRange(s, B.overseas.delay[0], B.overseas.delay[1]) };
+    }
     for (let i = 0; i < B.releaseIncidents; i++) {
       if (s.incidents.length < B.incidentMax) spawnRandomIncident(s);
     }
@@ -593,6 +598,26 @@ export function createSim(content) {
           break;
         }
       }
+    }
+  }
+
+  // ── overseas open weights ────────────────────────────────
+
+  function overseasDrop(s) {
+    const o = content.overseas;
+    s.overseas.pending = null;
+    s.overseas.drops++;
+    const drop = o.drops[(s.overseas.drops - 1) % o.drops.length];
+    addHype(s, -B.overseas.hypeHit);
+    s.buffs.push({ stat: 'revenue', mult: B.overseas.revenueMult, left: B.overseas.buffSecs, secs: B.overseas.buffSecs });
+    s.buffs.push({ stat: 'incidentRate', mult: B.overseas.incidentMult, left: B.overseas.buffSecs, secs: B.overseas.buffSecs });
+    addDoom(s, B.overseas.doom, 'replication');
+    s.proliferation = (s.proliferation || 0) + B.overseas.floorAdd;
+    emit(s, 'overseasDrop', { n: s.overseas.drops, lab: o.lab.name, model: drop.name, tagline: drop.tagline });
+    // The response card, unless a boss has everyone's attention.
+    const responses = content.events.filter((e) => e.trigger === 'overseas');
+    if (responses.length && !s.boss && s.phase === 'play') {
+      openCard(s, responses[(s.overseas.drops - 1) % responses.length].id);
     }
   }
 
@@ -635,6 +660,8 @@ export function createSim(content) {
   function endBoss(s, won) {
     const boss = s.boss;
     s.boss = null;
+    // Let the dust settle before the next decision card.
+    s.cardTimer = Math.max(s.cardTimer, B.cardAfterBoss);
     if (won) {
       addDoom(s, B.bossWin.doom);
       s.alignBonus += B.bossWin.align;
@@ -781,6 +808,7 @@ export function createSim(content) {
       (e) =>
         s.cap >= (e.minCap || 0) &&
         s.cap <= (e.maxCap ?? 101) &&
+        !e.trigger &&
         !(e.once && s.usedCards.includes(e.id)),
     );
   }
@@ -934,6 +962,11 @@ export function createSim(content) {
     }
 
     if (s.boss) bossStep(s, h);
+
+    if (s.overseas.pending) {
+      s.overseas.pending.in -= h;
+      if (s.overseas.pending.in <= 0) overseasDrop(s);
+    }
 
     if (s.blimp) {
       s.blimp.left -= h;

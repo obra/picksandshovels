@@ -72,9 +72,14 @@ export const B = {
   releaseIncidents: 2,
   releaseDoom: 1,
 
+  // An overseas lab drops open weights after each frontier release from the
+  // second on: markets panic, incidents spike, and the doom floor rises for good.
+  overseas: { afterRelease: 2, delay: [35, 55], hypeHit: 10, revenueMult: 0.7, incidentMult: 1.6, buffSecs: 30, doom: 3, floorAdd: 1.5 },
+
   // Decision cards
   firstCardAt: 28,
   cardEvery: [38, 55],
+  cardAfterBoss: 8,
 
   // VC blimp
   firstBlimpAt: 45,

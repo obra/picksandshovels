@@ -397,6 +397,55 @@ describe('labs', () => {
   });
 });
 
+describe('overseas open weights', () => {
+  it('drop a fast follower after the second frontier release, on a delay', () => {
+    const s = newGame();
+    setLabsCap(s, 10.5);
+    sim.tick(s, 0.1);
+    expect(s.overseas.pending).toBe(null);
+    setLabsCap(s, 20.5);
+    sim.tick(s, 0.1);
+    const pending = s.overseas.pending;
+    expect(pending.in).toBeGreaterThanOrEqual(B.overseas.delay[0] - 0.2);
+    expect(pending.in).toBeLessThanOrEqual(B.overseas.delay[1]);
+    s.hype = 60;
+    s.doom = 10;
+    sim.drainFx(s);
+    run(s, B.overseas.delay[1] + 1);
+    const drops = fxOf(s, 'overseasDrop');
+    expect(drops.length).toBe(1);
+    expect(drops[0].model).toBe('DeepSeep-1');
+    expect(s.overseas.drops).toBe(1);
+    expect(s.hype).toBeLessThan(60 - B.overseas.hypeHit + 2);
+    expect(s.buffs.map((b) => b.stat).sort()).toEqual(['incidentRate', 'revenue']);
+    expect(s.proliferation).toBeCloseTo(B.overseas.floorAdd, 6);
+    expect(s.phase).toBe('card');
+    expect(s.card.id).toBe('overseas-response');
+  });
+
+  it('raise the doom floor for good: the weights cannot be recalled', () => {
+    const s = newGame();
+    setAlign(s, 90);
+    s.owned.billboard = 40;
+    s.proliferation = 5;
+    s.doom = 0;
+    run(s, 2);
+    expect(s.doom).toBeGreaterThanOrEqual(5);
+  });
+
+  it('never come up as an ordinary random card', () => {
+    const s = newGame();
+    for (let i = 0; i < 40; i++) {
+      s.cardTimer = 0;
+      sim.tick(s, 0.1);
+      if (s.phase === 'card') {
+        expect(s.card.id).not.toBe('overseas-response');
+        sim.chooseCard(s, 1);
+      }
+    }
+  });
+});
+
 describe('decision cards', () => {
   it('open on a timer and freeze time until the player chooses', () => {
     const s = newGame();

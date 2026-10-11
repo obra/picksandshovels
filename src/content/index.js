@@ -8,12 +8,14 @@ import { LABS, MODEL_RELEASES } from './labs.js';
 import { HEADLINES } from './headlines.js';
 import { ENDINGS } from './endings.js';
 import * as flavor from './flavor.js';
+import { OVERSEAS, OVERSEAS_EVENTS, OVERSEAS_HEADLINES } from './overseas.js';
 
 export const CONTENT = {
   buildings: BUILDINGS,
   upgrades: UPGRADES,
   incidents: INCIDENTS,
-  events: EVENTS,
+  events: [...EVENTS, ...OVERSEAS_EVENTS],
+  overseas: { ...OVERSEAS, headlines: OVERSEAS_HEADLINES },
   labs: LABS,
   releases: MODEL_RELEASES,
   headlines: HEADLINES,

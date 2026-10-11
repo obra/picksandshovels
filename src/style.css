@@ -376,3 +376,6 @@ button { font: inherit; color: inherit; }
 .ach-n { font-family: var(--display); font-size: 8px; margin-bottom: 4px; }
 .ach-d { font-size: 13px; line-height: 1.1; }
 @media (max-width: 860px) { .ach-list { grid-template-columns: 1fr; } }
+
+.lab.overseas { background: #fff0ee; }
+.crown.open { background: #ff4f4f; color: white; }

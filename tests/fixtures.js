@@ -18,7 +18,18 @@ export const fixtureContent = {
     { id: 'scheme', text: 'Model schemes', site: 'lab', tier: 1, minCap: 0, kind: 'misalignment', fail: 'Schemed', fix: 'ok' },
     { id: 'exfil', text: 'Weights escape', site: 'lab', tier: 1, minCap: 0, kind: 'escape', fail: 'Escaped', fix: 'ok' },
   ],
+  overseas: {
+    lab: { id: 'deepseep', name: 'DeepSeep', short: 'DEEPSEEP', slogan: 's', color: '#e33' },
+    drops: [{ name: 'DeepSeep-1', tagline: 't' }, { name: 'DeepSeep-2', tagline: 't' }],
+  },
   events: [
+    {
+      id: 'overseas-response', title: 'Open Weights Drop', body: 'b', trigger: 'overseas',
+      options: [
+        { label: 'Lobby', effects: { hype: -2 }, result: 'r' },
+        { label: 'Study it', effects: { align: 1 }, result: 'r' },
+      ],
+    },
     {
       id: 'money', title: 'Money', body: 'b', once: true,
       options: [
