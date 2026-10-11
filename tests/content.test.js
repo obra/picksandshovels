@@ -82,6 +82,11 @@ describe('incidents', () => {
     expect(overLimit(INCIDENTS.map((i) => i.fix), 24)).toEqual([]);
   });
 
+  it('uses no {tokens}, since nothing fills them for incidents', () => {
+    const texts = INCIDENTS.flatMap((i) => [i.text, i.fail, i.fix]);
+    expect(texts.filter((t) => /[{}]/.test(t))).toEqual([]);
+  });
+
   it('uses only known sites, tiers and eras', () => {
     expect(INCIDENTS.filter((i) => !SITES.includes(i.site)).map((i) => i.id)).toEqual([]);
     expect(INCIDENTS.filter((i) => ![1, 2, 3].includes(i.tier)).map((i) => i.id)).toEqual([]);
@@ -124,7 +129,14 @@ describe('incidents', () => {
 });
 
 describe('events', () => {
-  const EFFECT_KEYS = ['doom', 'hype', 'align', 'cap', 'revSecs', 'cashMult', 'buff', 'flag'];
+  const EFFECT_KEYS = ['doom', 'hype', 'align', 'cap', 'revSecs', 'cashMult', 'buff', 'flag', 'stance'];
+  const STANCE_TARGETS = ['leader', 'rival', 'reckless', 'careful'];
+  const STANCES = ['favored', 'embargo', 'normal'];
+  const CARD_TOKENS = ['leader', 'rival'];
+  // The UI fills {leader} and {rival} with lab names, so limits must hold for
+  // the longest name (or the UI's 15-char fallback, 'the leading lab').
+  const longestName = 'x'.repeat(Math.max(15, ...LABS.map((l) => l.name.length)));
+  const filled = (t) => t.replaceAll('{leader}', longestName).replaceAll('{rival}', longestName);
   const BUFF_STATS = ['capRate', 'alignRate', 'hypeDecay', 'incidentRate', 'revenue'];
   const FLAGS = ['greed', 'openWeights', 'bunker', 'treaty', 'yolo'];
   const ABS_RANGES = { doom: [1, 12], hype: [3, 20], align: [1, 8], cap: [1, 4] };
@@ -162,6 +174,13 @@ describe('events', () => {
       if (!(b.secs >= 15 && b.secs <= 60)) problems.push(`${where}: buff secs ${b.secs}`);
     }
     if ('flag' in fx && !FLAGS.includes(fx.flag)) problems.push(`${where}: flag ${fx.flag}`);
+    if ('stance' in fx) {
+      const st = fx.stance;
+      const extra = Object.keys(st).filter((k) => !['target', 'stance'].includes(k));
+      if (extra.length) problems.push(`${where}: stance keys ${extra}`);
+      if (!STANCE_TARGETS.includes(st.target)) problems.push(`${where}: stance target ${st.target}`);
+      if (!STANCES.includes(st.stance)) problems.push(`${where}: stance ${st.stance}`);
+    }
     return problems;
   }
 
@@ -173,10 +192,22 @@ describe('events', () => {
   });
 
   it('keeps titles, bodies, buttons and results within their limits', () => {
-    expect(overLimit(EVENTS.map((e) => e.title), 32)).toEqual([]);
-    expect(overLimit(EVENTS.map((e) => e.body), 220)).toEqual([]);
-    expect(overLimit(options.map((o) => o.label), 34)).toEqual([]);
-    expect(overLimit(options.map((o) => o.result), 140)).toEqual([]);
+    expect(overLimit(EVENTS.map((e) => filled(e.title)), 32)).toEqual([]);
+    expect(overLimit(EVENTS.map((e) => filled(e.body)), 220)).toEqual([]);
+    expect(overLimit(options.map((o) => filled(o.label)), 34)).toEqual([]);
+    expect(overLimit(options.map((o) => filled(o.result)), 140)).toEqual([]);
+  });
+
+  it('uses only the {leader} and {rival} tokens', () => {
+    const texts = EVENTS.flatMap((e) => [e.title, e.body, ...e.options.flatMap((o) => [o.label, o.result])]);
+    const tokens = texts.flatMap((t) => [...t.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]));
+    expect(tokens.filter((t) => !CARD_TOKENS.includes(t))).toEqual([]);
+  });
+
+  it('has lab-dynamics cards that set every kind of stance', () => {
+    const stances = options.filter((o) => o.effects.stance).map((o) => o.effects.stance);
+    for (const target of STANCE_TARGETS) expect(stances.some((st) => st.target === target), target).toBe(true);
+    for (const stance of STANCES) expect(stances.some((st) => st.stance === stance), stance).toBe(true);
   });
 
   it('offers 2 or 3 distinct options per card', () => {

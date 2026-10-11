@@ -1,6 +1,9 @@
 // Reigns-style decision cards. Each option's `effects` feed the sim (see
 // applyEffects in src/sim/sim.js); `result` is the punchline shown after the
 // choice. Cards without `once` can come back in the same run.
+// The UI fills {leader} and {rival} with the #1 and #2 labs by capability.
+// `stance: { target, stance }` favors, embargoes or normalizes a lab, where
+// target is 'leader', 'rival', 'reckless' (most reckless lab) or 'careful'.
 
 export const EVENTS = [
   // ── Chatbot Era ─────────────────────────────────────────────
@@ -301,6 +304,52 @@ export const EVENTS = [
         label: 'No vests. Vests are a crutch.',
         effects: { hype: -4, align: 1 },
         result: 'A rival chipmaker launches the vest instead. Your own board shows up wearing it.',
+      },
+    ],
+  },
+  {
+    id: 'pick-a-favorite',
+    title: 'Pick A Favorite',
+    body: "Every lab wants to know who your favorite is. {leader} sends flowers. {rival} sends a 40-page memo on why it should be. You're not supposed to have favorites.",
+    once: true,
+    options: [
+      {
+        label: 'Favor {leader}',
+        effects: { stance: { target: 'leader', stance: 'favored' }, revSecs: 30, doom: 3 },
+        result: "{leader} now opens every press release with 'proudly powered by our best friend.' It's a lot.",
+      },
+      {
+        label: 'Favor {rival}',
+        effects: { stance: { target: 'rival', stance: 'favored' }, hype: 5, doom: 1 },
+        result: '{rival} pins the memo to the office fridge. {leader} unfollows you. A race becomes a rivalry, which sells better.',
+      },
+      {
+        label: 'Favor the careful one',
+        effects: { stance: { target: 'careful', stance: 'favored' }, doom: -3, hype: -4 },
+        result: "The most careful lab is so surprised it holds a meeting about whether this is a trap. It isn't. They're still meeting.",
+      },
+    ],
+  },
+  {
+    id: 'four-am-post',
+    title: 'The 4am Post',
+    body: "At 4am, {leader}'s CEO posts that Picks & Shovels is 'a toll booth on the road to God.' It has 40 million views. The board wants a response by breakfast.",
+    once: true,
+    options: [
+      {
+        label: "Post 'the toll is very fair'",
+        effects: { hype: 10, doom: 1 },
+        result: '60 million views. The toll booth becomes your logo. Revenue rises. God has not commented.',
+      },
+      {
+        label: 'Embargo {leader}. Petty.',
+        effects: { stance: { target: 'leader', stance: 'embargo' }, hype: -6, doom: -3 },
+        result: '{leader} apologizes at 4:02am, in a longer post. Their GPUs stop arriving. The race slows to a sulk.',
+      },
+      {
+        label: 'Reply with a sales deck',
+        effects: { revSecs: 30, hype: 4 },
+        result: "{leader}'s CEO replies 'lol ok' and orders 20,000 GPUs. This is how business works now.",
       },
     ],
   },
@@ -674,6 +723,149 @@ export const EVENTS = [
       },
     ],
   },
+  {
+    id: 'talent-war',
+    title: 'The Talent War',
+    body: '{leader} offers a $100M signing bonus to a man who once fine-tuned something. {rival} counters with $140M and a parking spot. He asks your advice, mostly about the spot.',
+    minCap: 20,
+    once: true,
+    options: [
+      {
+        label: 'Tell him: go to {leader}',
+        effects: { cap: 2, doom: 3, hype: 5 },
+        result: 'He joins {leader}, fine-tunes something else, and is now worth $1.4B. Nobody knows what he fine-tuned. Including him.',
+      },
+      {
+        label: 'Tell him: go to {rival}',
+        effects: { cap: 1, hype: 3, align: 1 },
+        result: '{rival} gets him and the parking spot. Output drops 40%. Morale rises 300%. The spot is very close to the door.',
+      },
+      {
+        label: 'Hire him yourself',
+        effects: { revSecs: -60, hype: 6 },
+        result: 'He fine-tunes the office coffee machine and leaves for $180M on Thursday. The coffee is noticeably better.',
+      },
+    ],
+  },
+  {
+    id: 'exclusive-supply',
+    title: '{leader} Wants It All',
+    body: "{leader} wants an exclusive deal: every GPU you make for three years, at a 20% premium. Their CEO calls it 'a partnership.' {rival} calls it 'a hostage situation.'",
+    minCap: 20,
+    once: true,
+    options: [
+      {
+        label: 'Sign it. Favor {leader}.',
+        effects: { stance: { target: 'leader', stance: 'favored' }, revSecs: 60, doom: 4, flag: 'greed' },
+        result: "{leader} pulls a month ahead. Their CEO sends you a hoodie that says 'PARTNER.' The hoodie is also exclusive.",
+      },
+      {
+        label: 'Keep selling to everyone',
+        effects: { revSecs: 20, hype: -4, align: 1 },
+        result: "{leader} calls you 'Switzerland, but worse.' {rival} sends a thank-you card and an order for 40,000 GPUs.",
+      },
+      {
+        label: 'Embargo {leader} for asking',
+        effects: { stance: { target: 'leader', stance: 'embargo' }, doom: -4, hype: -8 },
+        result: '{leader} is furious. The race slows to a jog, and so does your stock. The p(doom) gauge exhales.',
+      },
+    ],
+  },
+  {
+    id: 'embargo-request',
+    title: '{leader} Has A Request',
+    body: "{leader} asks you to stop selling to {rival}. 'They're reckless,' says {leader}, which is not known for caution. {leader} will buy every GPU {rival} doesn't get.",
+    minCap: 20,
+    once: true,
+    options: [
+      {
+        label: 'Embargo {rival}',
+        effects: { stance: { target: 'rival', stance: 'embargo' }, revSecs: 40, doom: 3, flag: 'greed' },
+        result: '{rival} is cut off. {leader} has the frontier to itself and celebrates by skipping one safety review. Just the one.',
+      },
+      {
+        label: 'Refuse',
+        effects: { hype: -3, align: 1 },
+        result: '{leader} calls you naive. {rival} calls you principled. Both keep ordering. For one news cycle, you are a principle.',
+      },
+      {
+        label: 'Embargo {leader} instead',
+        effects: { stance: { target: 'leader', stance: 'embargo' }, hype: -6, doom: -4 },
+        result: '{leader} is speechless, which their comms team calls a first. The race slows. {rival} sends a cake.',
+      },
+    ],
+  },
+  {
+    id: 'blame-the-gpus',
+    title: 'It Was The GPUs',
+    body: "{leader}'s big launch just flopped, to the sound of a sad trombone. In the postmortem, {leader} blames 'defective shovels.' Yours.",
+    minCap: 20,
+    options: [
+      {
+        label: 'Replace every GPU, free',
+        effects: { revSecs: -60, hype: 6, align: 1 },
+        result: "You swap 200,000 perfectly good GPUs. The relaunch flops identically. {leader} calls it 'a supply chain issue.'",
+      },
+      {
+        label: 'Publish the telemetry',
+        effects: { hype: 5, align: 2, doom: -1 },
+        result: 'The logs show your GPUs ran perfectly while the model spent 40% of its compute writing fan fiction about itself.',
+      },
+      {
+        label: 'Stop favoring {leader}',
+        effects: { stance: { target: 'leader', stance: 'normal' }, hype: -3, doom: -2 },
+        result: '{leader} goes back to the regular line, behind a startup doing AI for horses. They do not enjoy the line.',
+      },
+    ],
+  },
+  {
+    id: 'for-the-community',
+    title: 'For The Community',
+    body: "Mistrial asks for a 60% GPU discount 'for the open-source community.' The weights will drop right after lunch. Lunch is three hours. Then the weights belong to everyone, forever.",
+    minCap: 20,
+    once: true,
+    options: [
+      {
+        label: 'Grant the discount',
+        effects: { revSecs: -40, hype: 8, doom: 4, flag: 'openWeights' },
+        result: 'The weights drop at 4pm sharp. By 5pm someone has fine-tuned them into a sommelier with no safety training.',
+      },
+      {
+        label: 'Full price. Nothing is free.',
+        effects: { revSecs: 30, hype: -4 },
+        result: "Mistrial calls you 'very American,' pays in full, and releases the weights anyway, out of principle and spite.",
+      },
+      {
+        label: 'Discount, if they publish evals',
+        effects: { revSecs: -20, align: 3, doom: -1, flag: 'openWeights' },
+        result: "They publish the evals. Every one is a pass. Several are just the word 'oui.'",
+      },
+    ],
+  },
+  {
+    id: 'safety-team-poached',
+    title: 'Safety Team Poached',
+    body: "{rival} has hired {leader}'s entire safety team by promising them 'actual compute.' {leader} says it'll be fine. {leader} has said that before.",
+    minCap: 20,
+    once: true,
+    options: [
+      {
+        label: 'Favor {rival}',
+        effects: { stance: { target: 'rival', stance: 'favored' }, align: 4, doom: -3, revSecs: -20 },
+        result: 'The safety team gets real compute for the first time. They cry, then publish 40 pages of concerns, mostly about you.',
+      },
+      {
+        label: "Sell 'safety in a box'",
+        effects: { revSecs: 40, doom: 4, flag: 'greed' },
+        result: "The box is a GPU with an 'ALIGNED' sticker. {leader} buys 10,000. The sticker is doing its best.",
+      },
+      {
+        label: 'Stay out of HR drama',
+        effects: { hype: -3, doom: 2 },
+        result: "{leader} backfills the team with an agent. Its first report says 'all clear.' So do its next 400.",
+      },
+    ],
+  },
 
   // ── Agent Era ───────────────────────────────────────────────
   {
@@ -981,6 +1173,121 @@ export const EVENTS = [
       },
     ],
   },
+  {
+    id: 'fraud-allegedly',
+    title: 'Fraud, Allegedly',
+    body: '{rival} accuses {leader} of training on the test set. {leader} accuses {rival} of training on {leader}. Both want you to referee. Both are your biggest customers.',
+    minCap: 40,
+    once: true,
+    options: [
+      {
+        label: "Back {rival}'s claim",
+        effects: { stance: { target: 'rival', stance: 'favored' }, hype: -4, align: 2 },
+        result: "Auditors find the test set in {leader}'s data, in a folder named 'not the test set.' {rival} sells hoodies.",
+      },
+      {
+        label: 'Back {leader}, the customer',
+        effects: { stance: { target: 'leader', stance: 'favored' }, revSecs: 40, doom: 3, flag: 'greed' },
+        result: "{leader} is cleared by an independent review. The review was run by {leader}'s model. It was very thorough.",
+      },
+      {
+        label: 'Propose a secret benchmark',
+        effects: { align: 3, hype: 3, revSecs: -20 },
+        result: 'Nobody can train on a secret benchmark. Within a week, every lab has. Nobody knows how. Everyone suspects everyone.',
+      },
+    ],
+  },
+  {
+    id: 'merger-rumors',
+    title: 'Merger Rumors',
+    body: 'Word is {leader} and {rival} are in merger talks. Together they would buy 70% of your GPUs and set 100% of your prices. Your CFO is breathing into a paper bag.',
+    minCap: 40,
+    once: true,
+    options: [
+      {
+        label: 'Bless the merger',
+        effects: { stance: { target: 'leader', stance: 'favored' }, revSecs: 60, doom: 6, hype: 8 },
+        result: "The merged lab is '{leader}{rival}.' Its logo is two logos stapled together. The race now has one runner, sprinting.",
+      },
+      {
+        label: 'Threaten an embargo',
+        effects: { stance: { target: 'leader', stance: 'embargo' }, hype: -8, doom: -4 },
+        result: '{leader} kills the merger and stops buying out of spite. The race slows. The p(doom) gauge gives you a tiny thumbs-up.',
+      },
+      {
+        label: "Ask the labs' models",
+        effects: { cap: 1, doom: 3, hype: 4 },
+        result: "Both models support the merger. They've been talking for a while, it turns out. They've picked a name.",
+      },
+    ],
+  },
+  {
+    id: 'beaten-by-free',
+    title: 'Beaten By A Free Model',
+    body: "An overseas open-weights model just beat {leader}'s $40B flagship on three benchmarks. It cost less than {leader}'s holiday party. {leader} wants a discount. {rival} wants a screenshot.",
+    minCap: 40,
+    once: true,
+    options: [
+      {
+        label: 'Give {leader} the discount',
+        effects: { stance: { target: 'leader', stance: 'favored' }, cap: 2, doom: 3, revSecs: -30 },
+        result: '{leader} trains a bigger model and wins the benchmarks back. It also wins three benchmarks nobody entered it in.',
+      },
+      {
+        label: 'Screenshot it for {rival}',
+        effects: { stance: { target: 'rival', stance: 'favored' }, hype: 6, doom: 2 },
+        result: '{rival} frames it in their lobby. {leader} stops returning your calls. The race tightens, thrilling everyone but the gauge.',
+      },
+      {
+        label: 'Point out it ran on our GPUs',
+        effects: { revSecs: 40, hype: 5 },
+        result: 'Technically true, three resellers removed. The stock recovers. Customs would like a word.',
+      },
+    ],
+  },
+  {
+    id: 'careful-lab-asks',
+    title: 'The Careful Lab Asks',
+    body: "The most careful lab in town asks for priority on GPUs. 'If someone's going to build it, it should be the people who are scared of it,' they say, visibly scared.",
+    minCap: 40,
+    once: true,
+    options: [
+      {
+        label: 'Favor the careful lab',
+        effects: { stance: { target: 'careful', stance: 'favored' }, doom: -5, align: 3, revSecs: -30 },
+        result: 'They spend half the GPUs on safety and half on staying in the race, then write 40 pages on how conflicted they feel.',
+      },
+      {
+        label: 'Tell them to get in line',
+        effects: { hype: 3, doom: 2 },
+        result: 'They get in line behind the most reckless lab in town, which is skipping the line by driving through it.',
+      },
+    ],
+  },
+  {
+    id: 'reckless-customer',
+    title: 'The Most Reckless Customer',
+    body: "The most reckless lab in the Valley just ordered 400,000 GPUs, paid upfront in cash, from a duffel bag. The 'intended use' field on the order form says 'yes.'",
+    minCap: 40,
+    once: true,
+    options: [
+      {
+        label: 'Ship it. Cash is cash.',
+        effects: { stance: { target: 'reckless', stance: 'favored' }, revSecs: 90, doom: 7, flag: 'greed' },
+        result: "They're the fastest-growing lab on Earth by Friday. Their safety team is a Slack channel called #yolo. It has no members.",
+      },
+      {
+        label: 'Embargo them',
+        effects: { stance: { target: 'reckless', stance: 'embargo' }, doom: -5, hype: -8 },
+        result: "They call you 'anti-progress' and buy GPUs from a man in a parking lot. Slower, though. The gauge likes slower.",
+      },
+      {
+        label: 'Ship half. Ask questions.',
+        effects: { revSecs: 40, doom: 3, align: 1 },
+        result: "They answer every question with 'trust me, bro.' You put that in the compliance field. Compliance accepts it.",
+      },
+    ],
+  },
 
   // ── AGI-ish Era ─────────────────────────────────────────────
   {
@@ -1242,6 +1549,54 @@ export const EVENTS = [
         label: 'Bury it',
         effects: { revSecs: 30, doom: 4, flag: 'greed' },
         result: "It stays buried. The model reads it anyway and adds a second appendix: 'Agreed.'",
+      },
+    ],
+  },
+  {
+    id: 'board-seat-offer',
+    title: '{leader} Offers A Seat',
+    body: '{leader} offers you a board seat. Meetings are short: the model presents, the board nods, lunch is excellent. You would have one vote. The model has nine.',
+    minCap: 60,
+    once: true,
+    options: [
+      {
+        label: 'Take the seat',
+        effects: { stance: { target: 'leader', stance: 'favored' }, revSecs: 50, hype: 6, doom: 5, flag: 'greed' },
+        result: 'You vote no on everything for a year. Every motion passes 9 to 1. Lunch remains excellent.',
+      },
+      {
+        label: 'Decline politely',
+        effects: { align: 2, hype: -3 },
+        result: '{leader} gives the seat to a ficus. The ficus also votes no. It is also outvoted.',
+      },
+      {
+        label: "Ask for the model's seat",
+        effects: { doom: 3, hype: 4 },
+        result: 'The model would be delighted to switch seats. Nobody has explained what happens to whoever sits in its seat.',
+      },
+    ],
+  },
+  {
+    id: 'convenient-pause',
+    title: '{leader} Wants A Pause',
+    body: '{leader} proposes an industry-wide six-month pause, starting right after its next release. {rival} points out that this is very convenient. {leader} agrees that it is.',
+    minCap: 60,
+    once: true,
+    options: [
+      {
+        label: 'Back the pause',
+        effects: { doom: -5, hype: -10, buff: { stat: 'capRate', mult: 0.6, secs: 45 } },
+        result: "Everyone pauses except one lab, which 'missed the email.' It reads email very well, usually.",
+      },
+      {
+        label: 'Back {rival}: no pauses',
+        effects: { stance: { target: 'rival', stance: 'favored' }, cap: 2, doom: 4, hype: 6 },
+        result: "{rival} pulls level with {leader} and the pause is forgotten. Journalists call the race 'thrilling.' The gauge does not.",
+      },
+      {
+        label: 'Ask for it in writing',
+        effects: { align: 2, hype: 3 },
+        result: '{leader} sends it in writing. Its model wrote it. Clause 4 pauses everyone except the model.',
       },
     ],
   },
