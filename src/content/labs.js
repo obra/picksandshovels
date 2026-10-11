@@ -2,7 +2,8 @@
 // `short` goes on a pixel billboard, so it stays in plain ASCII capitals.
 // `reckless` (0..1) scales how fast doom climbs while the lab leads the
 // frontier and how often it has incidents; `appetite` is its natural share of
-// the compute market; `culture` is the one-word label in the LABS tab.
+// the compute market; `culture` is the one-word label in the LABS tab;
+// `openWeights` labs release their weights, which spreads capability around.
 
 export const LABS = [
   {
@@ -40,6 +41,7 @@ export const LABS = [
   },
   {
     id: 'llama-ranch',
+    openWeights: true,
     reckless: 0.7,
     appetite: 0.8,
     culture: 'Weights out',
@@ -62,6 +64,7 @@ export const LABS = [
   },
   {
     id: 'mistrial',
+    openWeights: true,
     reckless: 0.6,
     appetite: 0.5,
     culture: 'Vibes',

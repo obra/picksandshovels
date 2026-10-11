@@ -1,16 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { OVERSEAS, OVERSEAS_EVENTS, OVERSEAS_HEADLINES } from '../src/content/overseas.js';
 import { CONTENT } from '../src/content/index.js';
+import { FLOPS } from '../src/content/flops.js';
 
 const EFFECT_KEYS = new Set(['doom', 'hype', 'align', 'cap', 'revSecs', 'cashMult', 'buff', 'flag']);
 
 describe('overseas open-weights content', () => {
-  it('has a lab and a run of drops', () => {
-    expect(OVERSEAS.lab.short.length).toBeLessThanOrEqual(10);
-    expect(OVERSEAS.drops.length).toBeGreaterThanOrEqual(6);
-    for (const d of OVERSEAS.drops) {
-      expect(d.name.length).toBeGreaterThan(0);
-      expect(d.tagline.length).toBeLessThanOrEqual(90);
+  it('has at least four open-weights labs, each with a run of drops', () => {
+    expect(OVERSEAS.labs.length).toBeGreaterThanOrEqual(4);
+    for (const lab of OVERSEAS.labs) {
+      expect(lab.short.length).toBeLessThanOrEqual(10);
+      expect(lab.drops.length).toBeGreaterThanOrEqual(3);
+      for (const d of lab.drops) {
+        expect(d.name.length).toBeGreaterThan(0);
+        expect(d.tagline.length).toBeLessThanOrEqual(90);
+      }
+    }
+  });
+
+  it('flops have banner lines and ticker headlines', () => {
+    expect(FLOPS.length).toBeGreaterThanOrEqual(8);
+    for (const f of FLOPS) {
+      expect(f.tagline.length).toBeLessThanOrEqual(90);
+      expect(f.headline.length).toBeLessThanOrEqual(100);
     }
   });
 

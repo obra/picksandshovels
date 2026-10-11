@@ -9,6 +9,7 @@ import { HEADLINES } from './headlines.js';
 import { ENDINGS } from './endings.js';
 import * as flavor from './flavor.js';
 import { OVERSEAS, OVERSEAS_EVENTS, OVERSEAS_HEADLINES } from './overseas.js';
+import { FLOPS } from './flops.js';
 
 export const CONTENT = {
   buildings: BUILDINGS,
@@ -16,6 +17,7 @@ export const CONTENT = {
   incidents: INCIDENTS,
   events: [...EVENTS, ...OVERSEAS_EVENTS],
   overseas: { ...OVERSEAS, headlines: OVERSEAS_HEADLINES },
+  flops: FLOPS,
   labs: LABS,
   releases: MODEL_RELEASES,
   headlines: HEADLINES,

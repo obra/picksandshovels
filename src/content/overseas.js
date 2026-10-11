@@ -1,24 +1,62 @@
-// DeepSeep: the overseas lab that is not your customer, cannot be embargoed,
-// and releases open weights a few weeks after every frontier model. Each drop
-// crashes GPU demand, spreads capability everywhere, and raises the doom floor.
+// Overseas open-weights labs: not your customers, cannot be embargoed. After
+// every frontier release one of them drops open weights a few weeks later.
+// Each drop crashes GPU demand, spreads capability everywhere, and raises the
+// doom floor.
 
 export const OVERSEAS = {
-  lab: {
-    id: 'deepseep',
-    name: 'DeepSeep',
-    short: 'DEEPSEEP',
-    slogan: 'Weights seep. It is what they do.',
-    color: '#ff4f4f',
-  },
-  drops: [
-    { name: 'DeepSeep-R1', tagline: 'Trained for $6M on a cluster described as "some laptops".' },
-    { name: 'DeepSeep-V2.5-Coder', tagline: 'Matches the frontier. Runs on a gaming PC. Free.' },
-    { name: 'DeepSeep-R2', tagline: 'Released at 3am on a holiday, with a 4-line README.' },
-    { name: 'DeepSeep-V3-Lite-Max', tagline: 'Distilled from your customers, who are furious, about distillation.' },
-    { name: 'DeepSeep-R3-Zero', tagline: 'Learned to reason with no human data. Also no human oversight.' },
-    { name: 'DeepSeep-V4 (Torrent)', tagline: 'Fastest download in history. 40 million seeders by lunch.' },
-    { name: 'DeepSeep-R4', tagline: 'Fine-tunes itself on whatever you run it on. Says thank you.' },
-    { name: 'DeepSeep-∞', tagline: 'No weights file. It is already on your machine. It always was.' },
+  labs: [
+    {
+      id: 'deepseep',
+      name: 'DeepSeep',
+      short: 'DEEPSEEP',
+      slogan: 'Weights seep. It is what they do.',
+      color: '#ff4f4f',
+      drops: [
+        { name: 'DeepSeep-R1', tagline: 'Trained for $6M on a cluster described as "some laptops".' },
+        { name: 'DeepSeep-V3-Lite-Max', tagline: 'Distilled from your customers, who are furious, about distillation.' },
+        { name: 'DeepSeep-R3-Zero', tagline: 'Learned to reason with no human data. Also no human oversight.' },
+        { name: 'DeepSeep-∞', tagline: 'No weights file. It is already on your machine. It always was.' },
+      ],
+    },
+    {
+      id: 'qwerty',
+      name: 'Qwerty',
+      short: 'QWERTY',
+      slogan: 'A model for every key on the keyboard.',
+      color: '#ff9a3c',
+      drops: [
+        { name: 'Qwerty-2.5-72B-Instruct-Chat-Final', tagline: 'Comes in 41 sizes. One of them fits in a smartwatch.' },
+        { name: 'Qwerty-3-Coder-480B', tagline: 'Tops the coding leaderboard. The leaderboard is also open source.' },
+        { name: 'Qwerty-4-Omni-Tiny-Large', tagline: 'Sees, hears and speaks. Mostly speaks.' },
+        { name: 'Qwerty-5 (All of Them)', tagline: 'Every size at once. Your hard drive files a complaint.' },
+      ],
+    },
+    {
+      id: 'moonshine',
+      name: 'Moonshine',
+      short: 'MOONSHINE',
+      slogan: 'Distilled in small batches.',
+      color: '#9a62f2',
+      drops: [
+        { name: 'Moonshine K1', tagline: 'Reads a two-million-token context. Remembers all of it. Holds grudges.' },
+        { name: 'Moonshine K2-Agentic', tagline: 'Opens 300 browser tabs per question. Closes none.' },
+        { name: 'Moonshine K3-Thinking', tagline: 'Thinks for 40 minutes. Answer: "it depends".' },
+        { name: 'Moonshine K4', tagline: 'Benchmarked against itself. Wins every time.' },
+      ],
+    },
+    {
+      id: 'maximin',
+      name: 'MaxiMin',
+      short: 'MAXIMIN',
+      slogan: 'Maximum model, minimum license.',
+      color: '#3ccfc0',
+      drops: [
+        { name: 'MaxiMin-01', tagline: 'Four-million-token context. Uses it to write one email.' },
+        { name: 'MaxiMin-M2-Speech', tagline: 'Clones any voice from three seconds of audio. Yours is on file.' },
+        { name: 'MaxiMin-Hailuo-Video', tagline: 'Generates video of anything. Mostly of cats running a startup.' },
+        { name: 'MaxiMin-M4-Unlimited', tagline: 'No rate limits. No usage policy. No idea who is using it.' },
+      ],
+    },
   ],
 };
 
@@ -29,7 +67,7 @@ export const OVERSEAS_EVENTS = [
     id: 'overseas-panic',
     trigger: 'overseas',
     title: 'Open Weights Panic',
-    body: 'DeepSeep released a frontier-class model for free, trained on what they describe as "a fraction of a fraction" of your GPUs. Your stock is down 17%. The labs are asking why they bought so many shovels.',
+    body: 'An overseas lab released a frontier-class model for free, trained on "a fraction of a fraction" of your GPUs. Your stock is down 17%. The labs are asking why they bought so many shovels.',
     options: [
       {
         label: 'Lobby for export controls',
@@ -52,7 +90,7 @@ export const OVERSEAS_EVENTS = [
     id: 'overseas-distill',
     trigger: 'overseas',
     title: 'They Distilled Us',
-    body: 'Your biggest customer says DeepSeep trained on its model outputs, which it calls theft. Its model was trained on the entire internet, which it calls research.',
+    body: 'Your biggest customer says the overseas lab trained on its model outputs, which it calls theft. Its own model was trained on the entire internet, which it calls research.',
     options: [
       {
         label: 'Back your customer loudly',
@@ -98,7 +136,7 @@ export const OVERSEAS_EVENTS = [
     id: 'overseas-summit',
     trigger: 'overseas',
     title: 'Emergency Summit',
-    body: 'World leaders convene an emergency AI summit about the latest DeepSeep drop. The catering is excellent. The communique is 2 pages, of which 1.5 are names.',
+    body: 'World leaders convene an emergency AI summit about the latest open-weights drop. The catering is excellent. The communique is 2 pages, of which 1.5 are names.',
     options: [
       {
         label: 'Propose a compute treaty',
@@ -120,6 +158,10 @@ export const OVERSEAS_EVENTS = [
 ];
 
 export const OVERSEAS_HEADLINES = [
+  'Qwerty ships 41 model sizes in one afternoon; smallest runs on a calculator, largest on a prayer',
+  'Moonshine model reads entire internet in one prompt, summarizes it as "mid"',
+  'MaxiMin voice model clones senator; senator\'s clone gives better speech',
+  'Four overseas labs release open weights in one week; analysts call it "a weather pattern"',
   'DeepSeep releases frontier model for free; GPU stocks fall off a cliff, then off a slightly lower cliff',
   "Export controls 'working perfectly,' says official, holding a DeepSeep-branded tote bag",
   'Open-weights model downloaded 40M times; 39M by other models',

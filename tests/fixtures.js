@@ -6,7 +6,7 @@ export const fixtureContent = {
   upgrades: UPGRADES,
   labs: [
     { id: 'closed', name: 'ClosedAI', short: 'CLOSEDAI', slogan: 's', color: '#fff', accent: '#000', reckless: 0.9, appetite: 1, culture: 'YOLO' },
-    { id: 'anthro', name: 'Anthropomorphic', short: 'ANTHRO', slogan: 's', color: '#fa0', accent: '#000', reckless: 0.2, appetite: 1, culture: 'Worried' },
+    { id: 'anthro', name: 'Anthropomorphic', short: 'ANTHRO', slogan: 's', color: '#fa0', accent: '#000', reckless: 0.2, appetite: 1, culture: 'Worried', openWeights: true },
   ],
   releases: Array.from({ length: 10 }, (_, i) => [{ name: `Glorp-${i + 1}`, tagline: 't' }]),
   incidents: [
@@ -19,9 +19,12 @@ export const fixtureContent = {
     { id: 'exfil', text: 'Weights escape', site: 'lab', tier: 1, minCap: 0, kind: 'escape', fail: 'Escaped', fix: 'ok' },
   ],
   overseas: {
-    lab: { id: 'deepseep', name: 'DeepSeep', short: 'DEEPSEEP', slogan: 's', color: '#e33' },
-    drops: [{ name: 'DeepSeep-1', tagline: 't' }, { name: 'DeepSeep-2', tagline: 't' }],
+    labs: [
+      { id: 'deepseep', name: 'DeepSeep', short: 'DEEPSEEP', slogan: 's', color: '#e33', drops: [{ name: 'DeepSeep-1', tagline: 't' }, { name: 'DeepSeep-2', tagline: 't' }] },
+      { id: 'qwerty', name: 'Qwerty', short: 'QWERTY', slogan: 's', color: '#e83', drops: [{ name: 'Qwerty-1', tagline: 't' }, { name: 'Qwerty-2', tagline: 't' }] },
+    ],
   },
+  flops: [{ tagline: 'The demo was pre-recorded.', headline: '{lab} launch flops' }],
   events: [
     {
       id: 'overseas-response', title: 'Open Weights Drop', body: 'b', trigger: 'overseas',

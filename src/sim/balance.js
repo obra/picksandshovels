@@ -61,7 +61,8 @@ export const B = {
   incidentFixAlign: [0, 0.05, 0.12, 0.25],
   incidentFixHype: [0, 0.25, 0.5, 1],
   comboWindow: 3.5, // seconds between fixes to keep a combo going
-  comboRevenueSecs: 2, // per combo step past two
+  comboRevenueSecs: 0.5, // per combo step past two, capped at comboCap
+  comboCap: 10,
   comboMinCash: 5,
   comboHype: 0.4,
   internAutoPerSec: 0.012,
@@ -74,7 +75,12 @@ export const B = {
 
   // An overseas lab drops open weights after each frontier release from the
   // second on: markets panic, incidents spike, and the doom floor rises for good.
-  overseas: { afterRelease: 2, delay: [35, 55], hypeHit: 10, revenueMult: 0.7, incidentMult: 1.6, buffSecs: 30, doom: 3, floorAdd: 1.5 },
+  overseas: { afterRelease: 2, delay: [35, 55], hypeHit: 10, revenueMult: 0.7, incidentMult: 1.6, buffSecs: 30, doom: 3, floorAdd: 1 },
+
+  // Some releases bomb. Reckless labs bomb more; evals labs catch problems first.
+  bomb: { base: 0.1, recklessK: 0.15, evalsK: 0.012, min: 0.04, hype: -8, rollback: 1.5 },
+  // Open-weights customer labs leak a little too when they ship.
+  openRelease: { floorAdd: 0.5, incidentMult: 1.3, secs: 20 },
 
   // Decision cards
   firstCardAt: 28,

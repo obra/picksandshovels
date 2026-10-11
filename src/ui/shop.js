@@ -58,7 +58,7 @@ export class Shop {
     for (const b of sim.content.buildings) this.rows.push(this.makeRow(b, b.cat, false));
     for (const u of sim.content.upgrades) this.rows.push(this.makeRow(u, 'upgrades', true));
     this.labRows = sim.content.labs.map((lab, i) => this.makeLabRow(lab, i));
-    this.overseasRow = sim.content.overseas ? this.makeOverseasRow(sim.content.overseas.lab) : null;
+    this.overseasRows = (sim.content.overseas?.labs || []).map((lab) => this.makeOverseasRow(lab));
     this.setTab('compute');
   }
 
@@ -75,7 +75,7 @@ export class Shop {
       'div.lab',
       { 'data-cat': 'labs' },
       h('div.lab-top', {}, h('span.swatch', { style: { background: lab.color } }), h('span.lab-name', {}, lab.name), crown),
-      h('div.lab-meta', {}, h('span.culture', { title: 'Recklessness' }, `${lab.culture || ''} `, h('span.reck', {}, '!'.repeat(Math.max(1, reck)))), h('span.share')),
+      h('div.lab-meta', {}, h('span.culture', { title: 'Recklessness' }, `${lab.culture || ''}${lab.openWeights ? ' · open weights' : ''} `, h('span.reck', {}, '!'.repeat(Math.max(1, reck)))), h('span.share')),
       h('div.lab-cap', {}, h('div.capbar', {}, capFill), capVal),
       tokens,
       model,
@@ -101,10 +101,10 @@ export class Shop {
       model,
     );
     el.addEventListener('mouseenter', () =>
-      this.desc.replaceChildren(h('b', {}, lab.name.toUpperCase()), `"${lab.slogan}" After every frontier release from the second on, DeepSeep drops open weights: GPU demand crashes, incidents spike, and the doom floor rises for good.`),
+      this.desc.replaceChildren(h('b', {}, lab.name.toUpperCase()), `"${lab.slogan}" After every frontier release from the second on, one of the overseas labs drops open weights: GPU demand crashes, incidents spike, and the doom floor rises for good.`),
     );
     this.list.append(el);
-    return { el, status, model };
+    return { lab, el, status, model };
   }
 
   onStance(labId, stance) {
@@ -149,17 +149,18 @@ export class Shop {
     setText(this.hint, TABS.find((t) => t.cat === cat).hint);
     for (const r of this.rows) r.el.style.display = r.cat === cat ? '' : 'none';
     for (const r of this.labRows || []) r.el.style.display = cat === 'labs' ? '' : 'none';
-    if (this.overseasRow) this.overseasRow.el.style.display = cat === 'labs' ? '' : 'none';
+    for (const r of this.overseasRows || []) r.el.style.display = cat === 'labs' ? '' : 'none';
     this.list.scrollTop = 0;
   }
 
   updateLabs(s) {
     const d = this.sim.derived(s);
-    if (this.overseasRow) {
-      const o = s.overseas;
-      const drops = this.sim.content.overseas.drops;
-      setText(this.overseasRow.status, o.pending ? `Next drop in ~${Math.ceil(o.pending.in)}s` : o.drops ? `${o.drops} drop${o.drops > 1 ? 's' : ''} so far · doom floor +${s.proliferation.toFixed(1)}` : 'Waiting for the frontier to show the way');
-      setText(this.overseasRow.model, o.drops ? `Latest: ${drops[(o.drops - 1) % drops.length].name}` : '');
+    const o = s.overseas;
+    for (const row of this.overseasRows) {
+      const n = o.byLab?.[row.lab.id] || 0;
+      const next = o.pending ? ` · next drop from someone in ~${Math.ceil(o.pending.in)}s` : '';
+      setText(row.status, n ? `${n} drop${n > 1 ? 's' : ''}${next}` : `No drops yet${next}`);
+      setText(row.model, n ? `Latest: ${row.lab.drops[(n - 1) % row.lab.drops.length].name}` : '');
     }
     const order = this.labRows.slice().sort((a, b) => s.labs[b.i].cap - s.labs[a.i].cap);
     order.forEach((r, rank) => {

@@ -367,9 +367,17 @@ export class Game {
         this.ticker.breaking(f.was === 'home' ? 'Family home bulldozed for compute; family offered GPUs as compensation' : 'Beloved local shop replaced by datacenter; regulars report the datacenter is "less chatty"');
         break;
       case 'release':
-        audio.sfx('release');
-        this.notify.banner('release', `EUREKA! MODEL #${f.n}`, `${f.lab} ships ${f.model}`, `"${f.tagline}"`, 5200);
-        this.ticker.breaking(`${f.lab} releases ${f.model}: "${f.tagline}"`);
+        if (f.flop) {
+          audio.sfx('fail');
+          audio.sfx('winterEnd');
+          this.notify.banner('boss', `LAUNCH FLOP · MODEL #${f.n}`, `${f.lab} ships ${f.model}`, f.flopLine, 5200);
+          this.ticker.breaking(f.flopHeadline);
+        } else {
+          audio.sfx('release');
+          this.notify.banner('release', `EUREKA! MODEL #${f.n}${f.openWeights ? ' · OPEN WEIGHTS' : ''}`, `${f.lab} ships ${f.model}`, `"${f.tagline}"`, 5200);
+          this.ticker.breaking(`${f.lab} releases ${f.model}: "${f.tagline}"`);
+        }
+        if (f.openWeights) this.notify.toast('OPEN WEIGHTS', `${f.lab} posted the weights. Everyone has it now. Doom floor rises.`, 'skull', 5000);
         break;
       case 'era':
         this.notify.banner('era', 'A NEW ERA BEGINS', f.name.toUpperCase(), ERA_BLURBS[f.era], 5000);

@@ -289,6 +289,14 @@ export class World {
         break;
       }
       case 'release': {
+        if (f.flop) {
+          // A fizzle: gray confetti falls on the lab that shipped it.
+          const lab = this.map.labs.find((l, i) => this.content.labs[i]?.id === f.labId) || this.map.labs[0];
+          this.fx.burst(lab.x + OFFSET, 4, lab.z + OFFSET, [0x8e93a3, 0x6a6e7c, 0xb9bcc8], 30, 1.2);
+          this.releaseBillboard = { text: `${f.model} :(`.slice(0, 18), until: this.time + 15 };
+          this.billboardTimer = 0;
+          break;
+        }
         // Billboards across town advertise the new model for a while.
         this.releaseBillboard = { text: `NEW ${f.model}`.slice(0, 18), until: this.time + 25 };
         this.billboardTimer = 0;

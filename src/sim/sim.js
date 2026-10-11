@@ -71,7 +71,7 @@ export function createSim(content) {
         releases: 0,
       })),
       plots: MAP.plots.map((p) => ({ id: p.id, filler: p.filler, protected: p.protected, bId: null, level: 0 })),
-      overseas: { pending: null, drops: 0 },
+      overseas: { pending: null, drops: 0, byLab: {}, last: null },
       proliferation: 0,
       incidents: [],
       combo: 0,
@@ -115,6 +115,7 @@ export function createSim(content) {
         peakDoom: B.start.doom,
         minHype: B.start.hype,
         comboBest: 0,
+        flops: 0,
       },
       ending: null,
       fx: [],
@@ -508,7 +509,7 @@ export function createSim(content) {
       s.lastFixT = s.t;
       s.stats.comboBest = Math.max(s.stats.comboBest, s.combo);
       if (s.combo >= 3) {
-        const cash = derived(s).revenue * B.comboRevenueSecs * (s.combo - 2) + B.comboMinCash;
+        const cash = derived(s).revenue * B.comboRevenueSecs * (Math.min(s.combo, B.comboCap) - 2) + B.comboMinCash;
         addCash(s, cash);
         addHype(s, B.comboHype);
         emit(s, 'combo', { combo: s.combo, cash, at: inc.at });
@@ -552,6 +553,12 @@ export function createSim(content) {
 
   // ── releases, eras, unlocks ──────────────────────────────
 
+  function flopChance(s, labIndex) {
+    const reck = content.labs[labIndex]?.reckless ?? 0.5;
+    const evals = s.owned.evals || 0;
+    return Math.max(B.bomb.min, B.bomb.base + B.bomb.recklessK * reck - B.bomb.evalsK * evals);
+  }
+
   function release(s) {
     s.releases++;
     const options = content.releases[s.releases - 1] || [{ name: `Model-${s.releases}`, tagline: '' }];
@@ -562,10 +569,34 @@ export function createSim(content) {
     s.labs[leader].releases++;
     s.lastModel = model.name;
     s.lastLab = lab.name;
-    addHype(s, B.hypeOnRelease * upgradeProduct(s, 'releaseHypeMult'));
-    addCash(s, derived(s).revenue * B.releaseRevenueSecs);
+    const flop = content.flops?.length && nextRandom(s) < flopChance(s, leader) ? pick(s, content.flops) : null;
+    if (flop) {
+      // The launch bombs: mocked online, quietly rolled back.
+      addHype(s, B.bomb.hype);
+      s.labs[leader].capBonus -= B.bomb.rollback;
+      s.stats.flops++;
+      recomputeMeters(s);
+    } else {
+      addHype(s, B.hypeOnRelease * upgradeProduct(s, 'releaseHypeMult'));
+      addCash(s, derived(s).revenue * B.releaseRevenueSecs);
+    }
     addDoom(s, B.releaseDoom, ERA_CAUSE[s.era]);
-    emit(s, 'release', { n: s.releases, lab: lab.name, labId: lab.id, model: model.name, tagline: model.tagline });
+    const openWeights = !!lab.openWeights;
+    if (openWeights) {
+      s.proliferation = (s.proliferation || 0) + B.openRelease.floorAdd;
+      s.buffs.push({ stat: 'incidentRate', mult: B.openRelease.incidentMult, left: B.openRelease.secs, secs: B.openRelease.secs });
+    }
+    emit(s, 'release', {
+      n: s.releases,
+      lab: lab.name,
+      labId: lab.id,
+      model: model.name,
+      tagline: model.tagline,
+      flop: !!flop,
+      flopLine: flop?.tagline,
+      flopHeadline: flop?.headline?.replaceAll('{lab}', lab.name).replaceAll('{model}', model.name),
+      openWeights,
+    });
     if (content.overseas && s.releases >= B.overseas.afterRelease && !s.overseas.pending) {
       s.overseas.pending = { in: randRange(s, B.overseas.delay[0], B.overseas.delay[1]) };
     }
@@ -607,13 +638,18 @@ export function createSim(content) {
     const o = content.overseas;
     s.overseas.pending = null;
     s.overseas.drops++;
-    const drop = o.drops[(s.overseas.drops - 1) % o.drops.length];
+    // A different lab each time: they take turns, loosely.
+    const choices = o.labs.length > 1 ? o.labs.filter((l) => l.id !== s.overseas.last) : o.labs;
+    const lab = pick(s, choices);
+    s.overseas.last = lab.id;
+    const n = (s.overseas.byLab[lab.id] = (s.overseas.byLab[lab.id] || 0) + 1);
+    const drop = lab.drops[(n - 1) % lab.drops.length];
     addHype(s, -B.overseas.hypeHit);
     s.buffs.push({ stat: 'revenue', mult: B.overseas.revenueMult, left: B.overseas.buffSecs, secs: B.overseas.buffSecs });
     s.buffs.push({ stat: 'incidentRate', mult: B.overseas.incidentMult, left: B.overseas.buffSecs, secs: B.overseas.buffSecs });
     addDoom(s, B.overseas.doom, 'replication');
     s.proliferation = (s.proliferation || 0) + B.overseas.floorAdd;
-    emit(s, 'overseasDrop', { n: s.overseas.drops, lab: o.lab.name, model: drop.name, tagline: drop.tagline });
+    emit(s, 'overseasDrop', { n: s.overseas.drops, lab: lab.name, labId: lab.id, model: drop.name, tagline: drop.tagline });
     // The response card, unless a boss has everyone's attention.
     const responses = content.events.filter((e) => e.trigger === 'overseas');
     if (responses.length && !s.boss && s.phase === 'play') {
@@ -1028,6 +1064,7 @@ export function createSim(content) {
     startBoss,
     survivalFlavor,
     setLabStance,
+    flopChance,
     content,
   };
 }

@@ -184,6 +184,7 @@ describe('p(doom)', () => {
     const s = newGame();
     setAlign(s, 95); // no new doom while we wait
     s.owned.billboard = 40;
+    s.releases = 9; // and no model releases stirring things up
     s.doomCause.sycophancy = 30;
     s.doomCause.replication = 10;
     run(s, 300);
@@ -414,13 +415,38 @@ describe('overseas open weights', () => {
     run(s, B.overseas.delay[1] + 1);
     const drops = fxOf(s, 'overseasDrop');
     expect(drops.length).toBe(1);
-    expect(drops[0].model).toBe('DeepSeep-1');
+    expect(['DeepSeep-1', 'Qwerty-1']).toContain(drops[0].model);
     expect(s.overseas.drops).toBe(1);
     expect(s.hype).toBeLessThan(60 - B.overseas.hypeHit + 2);
     expect(s.buffs.map((b) => b.stat).sort()).toEqual(['incidentRate', 'revenue']);
     expect(s.proliferation).toBeCloseTo(B.overseas.floorAdd, 6);
     expect(s.phase).toBe('card');
     expect(s.card.id).toBe('overseas-response');
+  });
+
+  it('come from a rotating cast of open-weights labs, never the same one twice running', () => {
+    const s = newGame();
+    const labs = [];
+    for (let i = 0; i < 6; i++) {
+      s.hype = 100; // back-to-back drops would otherwise freeze us into an AI winter
+      s.overseas.pending = { in: 0.01 };
+      sim.tick(s, 0.1);
+      labs.push(fxOf(s, 'overseasDrop')[0].lab);
+      if (s.phase === 'card') sim.chooseCard(s, 0);
+    }
+    for (let i = 1; i < labs.length; i++) expect(labs[i]).not.toBe(labs[i - 1]);
+    expect(new Set(labs)).toEqual(new Set(['DeepSeep', 'Qwerty']));
+    expect(s.overseas.byLab.deepseep + s.overseas.byLab.qwerty).toBe(6);
+  });
+
+  it('also leak when an open-weights customer lab ships a frontier model', () => {
+    const s = newGame();
+    s.labs[1].cumTrain = cumFromPoints(10.4, B.labC0);
+    sim.tick(s, 0.1);
+    const rel = fxOf(s, 'release')[0];
+    expect(rel.lab).toBe('Anthropomorphic');
+    expect(rel.openWeights).toBe(true);
+    expect(s.proliferation).toBeCloseTo(B.openRelease.floorAdd, 6);
   });
 
   it('raise the doom floor for good: the weights cannot be recalled', () => {
@@ -443,6 +469,43 @@ describe('overseas open weights', () => {
         sim.chooseCard(s, 1);
       }
     }
+  });
+});
+
+describe('model flops', () => {
+  function withBombChance(p, fn) {
+    const saved = B.bomb.base;
+    B.bomb.base = p;
+    try {
+      fn();
+    } finally {
+      B.bomb.base = saved;
+    }
+  }
+
+  it('a release can bomb: hype falls, the lab rolls back, and nobody gets a launch bonus', () => {
+    withBombChance(1, () => {
+      const s = newGame();
+      s.hype = 50;
+      const cash = s.cash;
+      s.labs[0].cumTrain = cumFromPoints(10.4, B.labC0);
+      sim.tick(s, 0.1);
+      const rel = fxOf(s, 'release')[0];
+      expect(rel.flop).toBe(true);
+      expect(rel.flopLine).toBe('The demo was pre-recorded.');
+      expect(s.hype).toBeLessThan(50);
+      expect(s.labs[0].capBonus).toBeCloseTo(-B.bomb.rollback, 6);
+      expect(s.cash - cash).toBeLessThan(1);
+      expect(s.stats.flops).toBe(1);
+    });
+  });
+
+  it('evals labs make flops rarer', () => {
+    const s = newGame();
+    const before = sim.flopChance(s, 0);
+    s.owned.evals = 5;
+    expect(sim.flopChance(s, 0)).toBeLessThan(before);
+    expect(sim.flopChance(s, 0)).toBeGreaterThanOrEqual(B.bomb.min);
   });
 });
 
