@@ -41,6 +41,18 @@ const TIPS = [
     text: 'Click it before it drifts off. Free term sheet. There is always free money.',
   },
   {
+    id: 'labs',
+    when: (s) => s.cap > 14,
+    title: 'YOUR CUSTOMERS',
+    text: 'Check the LABS tab. The leading lab sets the pace, and reckless leaders make doom climb faster. Favor careful labs, embargo reckless ones.',
+  },
+  {
+    id: 'openweights',
+    when: (s) => s.overseas?.drops > 0,
+    title: 'OPEN WEIGHTS',
+    text: 'An overseas lab gave away a frontier model. GPU demand dips, incidents spike, and the doom floor rises for good. You cannot embargo them. You can only out-align them.',
+  },
+  {
     id: 'release',
     when: (s) => s.releases >= 1,
     title: 'EUREKA',
