@@ -24,9 +24,10 @@ export function hqLevelFor(peakCash) {
 export const DIORAMA_MARGIN = 6;
 
 export class City {
-  constructor(scene, map, labs, fx) {
+  constructor(scene, map, labs, fx, buildings = []) {
     this.map = map;
     this.labsContent = labs;
+    this.buildingById = Object.fromEntries(buildings.map((b) => [b.id, b]));
     this.fx = fx;
     this.material = voxelMaterial();
     this.root = new THREE.Group();
@@ -69,7 +70,7 @@ export class City {
       g.add(new THREE.Mesh(vb.build(), this.material));
       for (const spec of res.signs) g.add(this.makeSign(spec).mesh);
       this.root.add(g);
-      return { group: g, top: res.top, lab };
+      return { group: g, top: res.top, lab, info: { title: lab.name, text: `"${lab.slogan}"`, lab } };
     });
 
     // A giant billboard greets traffic coming off the bridge.
@@ -145,6 +146,9 @@ export class City {
     this.root.add(g);
     p.group = g;
     p.top = res.top;
+    const b = sp.bId && this.buildingById[sp.bId];
+    p.info = b ? { title: b.name, text: b.desc, bId: b.id, level: sp.level } : res.info;
+    p.billboard = signs.find((x) => x.spec.slot === 'billboard') || null;
     p.smoke = res.smoke.map((s) => ({ ...s, acc: Math.random() }));
 
     if (old) {

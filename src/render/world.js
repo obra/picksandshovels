@@ -36,7 +36,7 @@ export class World {
     this.sky = new Sky(container);
     this.stage = new Stage(container);
     this.fx = new Particles(this.stage.scene);
-    this.city = new City(this.stage.scene, map, content.labs, this.fx);
+    this.city = new City(this.stage.scene, map, content.labs, this.fx, content.buildings);
     this.life = new Life(this.stage.scene, map);
     this.bosses = new Bosses(this.stage.scene, this.city, this.fx);
     this.time = 0;
@@ -210,6 +210,28 @@ export class World {
 
   sitePoint(at, out) {
     return this.city.sitePoint(at, out);
+  }
+
+  // The building under a screen point (CSS px), front-most first, or null.
+  // Tests each building's screen-space column from its footprint up to its roof.
+  pick(x, y) {
+    const pxPerUnit = this.stage.height / this.stage.viewSize();
+    const g = { x: 0, y: 0 };
+    const t = { x: 0, y: 0 };
+    let best = null;
+    const test = (at, radius, info) => {
+      this.city.siteGround(at, this.tmp);
+      this.stage.project(this.tmp.x, this.tmp.y, this.tmp.z, g);
+      this.city.sitePoint(at, this.tmp);
+      this.stage.project(this.tmp.x, this.tmp.y, this.tmp.z, t);
+      const half = radius * 1.414 * pxPerUnit * 0.5;
+      if (Math.abs(x - g.x) > half) return;
+      if (y < t.y - half * 0.3 || y > g.y + half * 0.5) return;
+      if (!best || g.y > best.depth) best = { at, info, depth: g.y };
+    };
+    this.city.plots.forEach((p) => test({ kind: 'plot', id: p.id }, 1.7, p.info));
+    this.city.labMeshes.forEach((m, i) => test({ kind: 'lab', id: i }, 3.6, m.info));
+    return best;
   }
 
   project(v, out) {

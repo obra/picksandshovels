@@ -3,11 +3,12 @@
 
 import { P } from '../palette.js';
 import { GOLD_RUSH_SIGNS } from '../../content/flavor.js';
+import { SHOP_INFO, HOME_INFO, LOT_INFO, HQ_INFO } from '../../content/places.js';
 import {
   rnd, choose, result, buildingColor, lot, tree, palm, bush, car, person, acUnit, waterTank, awning, ledStrip, antenna,
 } from './common.js';
 
-const SHOP_SIGNS = [
+export const SHOP_SIGNS = [
   'TACOS', 'BOBA', 'PIZZA', 'COFFEE', 'VAPE', 'SUSHI', 'DONUTS', 'RAMEN', 'KOMBUCHA', 'POKE',
   'BAGELS', 'GYM', 'PHO', 'BURRITO', 'MATCHA', 'JUICE', 'BANH MI', 'NAILS',
 ];
@@ -290,10 +291,16 @@ function hqStore(vb, seed) {
   });
 }
 
+// Every filler model also says what it is, for the hover tooltip.
 export function filler(vb, kind, seed, level = 1) {
-  if (kind === 'hq') return hq(vb, seed, level);
-  if (kind === 'shop') return rnd(seed, 78) < 0.3 ? westernShop(vb, seed) : shop(vb, seed);
-  return rnd(seed, 77) < 0.55 ? house(vb, seed) : apartment(vb, seed);
+  if (kind === 'hq') return { ...hq(vb, seed, level), info: HQ_INFO };
+  if (kind === 'shop') {
+    const res = rnd(seed, 78) < 0.3 ? westernShop(vb, seed) : shop(vb, seed);
+    const sign = res.signs[0]?.text;
+    return { ...res, info: { title: sign, text: SHOP_INFO[sign] || 'A local business, for now.' } };
+  }
+  if (rnd(seed, 77) < 0.55) return { ...house(vb, seed), info: { title: 'Home', text: choose(HOME_INFO.house, seed, 61) } };
+  return { ...apartment(vb, seed), info: { title: 'Apartments', text: choose(HOME_INFO.apartment, seed, 62) } };
 }
 
 export function emptyLot(vb, seed) {
@@ -307,5 +314,5 @@ export function emptyLot(vb, seed) {
     const z = (rnd(seed, 50 + i) - 0.5) * 1.3;
     vb.box(x - 0.03, 0, z - 0.03, x + 0.03, 0.05, z + 0.03, P.grassDark);
   }
-  return result(0.4);
+  return result(0.4, { info: { title: 'For Lease', text: LOT_INFO } });
 }

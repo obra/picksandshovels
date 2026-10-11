@@ -21,6 +21,7 @@ import { loadMeta, saveMeta, loadGame, saveGame, clearGame } from './ui/storage.
 import { money } from './ui/format.js';
 import { h } from './ui/dom.js';
 import { renderShareCard } from './ui/sharecard.js';
+import { Inspect } from './ui/inspect.js';
 
 const ERA_BLURBS = [
   '',
@@ -53,6 +54,13 @@ export class Game {
     this.achTimer = 0;
     this.redFlash = h('div.flash-red');
     this.overlay.append(this.redFlash);
+    this.inspect = new Inspect(this.ui, this.overlay, {
+      world: this.world,
+      getState: () => this.state,
+      sim: this.sim,
+      content: CONTENT,
+      isActive: () => (this.mode === 'play' || this.mode === 'title') && !this.cards?.open,
+    });
     this.bindInput();
   }
 
@@ -307,6 +315,7 @@ export class Game {
 
     const derived = this.mode === 'title' ? null : this.sim.derived(s);
     this.world.update(dt, s, { title: this.mode === 'title', derived });
+    this.inspect.update(s, derived, this.mode === 'play' || this.mode === 'paused');
 
     if (this.uiBuilt && (this.mode === 'play' || this.mode === 'paused')) {
       const d = derived;

@@ -23,6 +23,12 @@ const TIPS = [
     text: 'COMPUTE buildings earn money. SAFETY buildings raise alignment. HYPE buildings keep the investors from wandering off.',
   },
   {
+    id: 'inspect',
+    when: (s) => s.t > 22,
+    title: 'LOOK AROUND',
+    text: 'Hover over any building (or tap it) to see what it is. Every shop, lab and billboard in the Valley has something to say.',
+  },
+  {
     id: 'race',
     when: (s) => s.cap > 6 && s.cap - s.align > 3,
     title: 'THE RACE',

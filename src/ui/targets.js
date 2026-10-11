@@ -195,6 +195,17 @@ export class Targets {
       this.quips.push(el);
     }
     this.root.append(el);
+    // Stack above any floater already near this spot instead of overlapping it.
+    this.live = (this.live || []).filter((f) => f.el.isConnected);
+    const h0 = el.offsetHeight;
+    let top = y;
+    for (let tries = 0; tries < 8; tries++) {
+      const hit = this.live.find((f) => Math.abs(f.x - x) < (f.w + el.offsetWidth) / 2 + 8 && Math.abs(f.top - top) < (f.h + h0) / 2 + 4);
+      if (!hit) break;
+      top = hit.top - (hit.h + h0) / 2 - 6;
+    }
+    el.style.top = `${top}px`;
+    this.live.push({ el, x, top, h: h0, w: el.offsetWidth });
     setTimeout(() => el.remove(), quip ? 3800 : 1900);
   }
 
