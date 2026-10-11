@@ -19,7 +19,7 @@ function meter(cls, label, iconName) {
 }
 
 export class Hud {
-  constructor(root, { onPause, onMute, isMuted }) {
+  constructor(root, { onPause, onMute, isMuted, onRotate }) {
     this.date = h('div.date');
     this.era = h('div.era');
     const brand = h('div.panel.brand', {}, h('div.logo', {}, sprite('pick')), h('div', {}, h('div.name', {}, 'PICKS &', h('br'), 'SHOVELS'), this.date, this.era));
@@ -48,7 +48,9 @@ export class Hud {
     this.buffs = h('div.buffs');
     this.muteBtn = h('button.btn.icon-btn', { title: 'Sound (M)', onclick: () => this.updateMute(onMute()) });
     const pauseBtn = h('button.btn.icon-btn', { title: 'Pause (P)', onclick: onPause }, icon('pause'));
-    const money_ = h('div', {}, h('div.panel.money', {}, this.cash, this.rev, this.gpus, this.buffs), h('div.hud-buttons', {}, this.muteBtn, pauseBtn));
+    const rotL = h('button.btn.icon-btn', { title: 'Rotate city (Q)', onclick: () => onRotate(-1) }, icon('rotl'));
+    const rotR = h('button.btn.icon-btn', { title: 'Rotate city (E)', onclick: () => onRotate(1) }, icon('rotr'));
+    const money_ = h('div', {}, h('div.panel.money', {}, this.cash, this.rev, this.gpus, this.buffs), h('div.hud-buttons', {}, rotL, rotR, this.muteBtn, pauseBtn));
     this.updateMute(isMuted());
 
     this.el = h('div.hud', {}, brand, this.meters, money_);

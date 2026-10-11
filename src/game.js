@@ -66,6 +66,7 @@ export class Game {
         return audio.isMuted();
       },
       isMuted: () => audio.isMuted(),
+      onRotate: (dir) => this.world.stage.rotate(dir),
     });
     this.shop = new Shop(this.ui, {
       sim: this.sim,
