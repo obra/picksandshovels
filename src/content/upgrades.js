@@ -8,6 +8,7 @@
 //   incidentTimeAdd  fraction added to incident timers
 //   clickReduce      clicks removed from tier 2 and 3 incidents
 //   doomGapMult      multiplies gap-driven doom growth
+//   floorMult        multiplies the irreducible doom floor
 //   releaseHypeMult  multiplies hype from model releases
 //   redCharge        adds Big Red Button charges (and unlocks it)
 //   doomNow          one-time doom change on purchase
@@ -57,8 +58,8 @@ export const UPGRADES = [
   },
   {
     id: 'deceptionneuron', name: 'Found the Deception Neuron', cost: 400000, minCap: 35,
-    effect: { doomGapMult: 0.8 },
-    desc: 'Doom from the capability gap -20%. When we turned it off, the model said "thank you". Unclear whether it meant it.',
+    effect: { doomGapMult: 0.8, floorMult: 0.85 },
+    desc: 'Gap doom -20%, doom floor -15%. When we turned it off, the model said "thank you". Unclear whether it meant it.',
   },
   {
     id: 'chiplets', name: 'Chiplets', cost: 1.2e6, minCap: 40,
@@ -67,8 +68,8 @@ export const UPGRADES = [
   },
   {
     id: 'oversight', name: 'Scalable Oversight', cost: 3e6, minCap: 45,
-    effect: { researchMult: 1.6 },
-    desc: 'Safety research +60%. Weak models supervise strong models, the way interns supervise the CEO.',
+    effect: { researchMult: 1.6, floorMult: 0.85 },
+    desc: 'Safety research +60%, doom floor -15%. Weak models supervise strong models, the way interns supervise the CEO.',
   },
   {
     id: 'governance', name: 'Compute Governance', cost: 6e6, minCap: 45,
@@ -77,8 +78,8 @@ export const UPGRADES = [
   },
   {
     id: 'treaty', name: 'International AI Treaty', cost: 4e7, minCap: 60,
-    effect: { capMult: 0.85, doomNow: -6, flag: 'treaty' },
-    desc: 'Training -15%, doom -6 now. Signed by 47 countries, read by 3, honored by "it depends what you mean by honored".',
+    effect: { capMult: 0.85, doomNow: -6, floorMult: 0.8, flag: 'treaty' },
+    desc: 'Training -15%, doom -6 now, doom floor -20%. Signed by 47 countries, read by 3, honored by "it depends what you mean by honored".',
   },
   {
     id: 'aialigner', name: 'Use the AI to Align the AI', cost: 1.5e8, minCap: 65,

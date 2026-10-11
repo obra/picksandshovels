@@ -167,17 +167,22 @@ export function createSim(content) {
 
   function derived(s) {
     const compute = statSum(s, 'compute') * upgradeProduct(s, 'computeMult');
+    const labCompute = B.labBase * Math.exp(B.labGrowth * s.t);
+    const labShare = labCompute / (compute + labCompute);
     const hypeMult = B.hypeRevenueBase + s.hype / 100;
     const revenue = compute * B.price * hypeMult * buffMult(s, 'revenue');
     const research = statSum(s, 'research') * upgradeProduct(s, 'researchMult') * buffMult(s, 'alignRate');
     const paused = s.pauseLeft > 0;
     const capMult = paused ? 0 : upgradeProduct(s, 'capMult') * buffMult(s, 'capRate');
-    const labCompute = B.labBase * Math.exp(B.labGrowth * s.t);
     const trainRate = (compute + labCompute) * capMult;
-    const hypeGain = statSum(s, 'hype');
+    // Investors grow harder to impress, and nobody listens to a vendor
+    // with no market share.
+    const relevance = 1 - B.irrelevanceGainCut * labShare;
+    const hypeGain = (statSum(s, 'hype') / (1 + s.t / B.hypeDecayTimeScale)) * relevance;
     const hypeDecay =
       (B.hypeDecayBase + B.hypeDecayPerHype * s.hype) *
       (1 + s.t / B.hypeDecayTimeScale) *
+      (1 + B.irrelevanceK * labShare) *
       upgradeProduct(s, 'hypeDecayMult') *
       buffMult(s, 'hypeDecay');
     const incidentRate =
@@ -207,7 +212,9 @@ export function createSim(content) {
       autoResolve,
       doomDamp,
       doomRate,
-      doomFloor: s.cap * B.doomFloorPerCap,
+      doomFloor: s.cap * B.doomFloorPerCap * upgradeProduct(s, 'floorMult'),
+      labShare,
+      relevance,
       era: s.era,
       eraName: ERAS[s.era],
     };
@@ -613,7 +620,7 @@ export function createSim(content) {
     if (kind === 'tweet') {
       if (s.cooldowns.tweet > 0) return false;
       s.cooldowns.tweet = B.tweet.cooldown;
-      addHype(s, B.tweet.hype);
+      addHype(s, B.tweet.hype * derived(s).relevance);
       addDoom(s, B.tweet.doom, 'engagement');
       s.stats.tweets++;
     } else if (kind === 'pause') {

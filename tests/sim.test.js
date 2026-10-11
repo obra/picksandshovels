@@ -196,7 +196,7 @@ describe('hype', () => {
     const s = newGame();
     s.hype = 40;
     expect(sim.useAbility(s, 'tweet')).toBe(true);
-    expect(s.hype).toBeCloseTo(40 + B.tweet.hype, 6);
+    expect(s.hype).toBeCloseTo(40 + B.tweet.hype * sim.derived(s).relevance, 6);
     expect(sim.useAbility(s, 'tweet')).toBe(false);
     run(s, B.tweet.cooldown + 0.5);
     expect(sim.useAbility(s, 'tweet')).toBe(true);

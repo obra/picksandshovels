@@ -23,17 +23,21 @@ export const B = {
   labGrowth: 0.0085, // per second, exponential
 
   // p(doom)
-  doomGapK: 0.011, // per second per point of capability over alignment
+  doomGapK: 0.015, // per second per point of capability over alignment
   doomRecover: 0.1, // per second when alignment leads by 10+
-  doomFloorPerCap: 0.12, // irreducible risk grows with capability
+  doomFloorPerCap: 0.2, // irreducible risk grows with capability; upgrades shrink it
   doomPerActiveTier: 0.012, // per second per tier of open incident
 
   // Hype
   hypeDecayBase: 0.1,
   hypeDecayPerHype: 0.0026,
   hypeDecayTimeScale: 700, // decay x(1 + t/scale): investors get impatient
-  hypeOnComputeBuy: 1.2,
+  hypeOnComputeBuy: 0.8,
   hypeOnRelease: 12,
+  // Selling little compute while the rest of the industry grows looks like
+  // irrelevance: decay x(1 + irrelevanceK x the labs' share of all compute).
+  irrelevanceK: 1.5,
+  irrelevanceGainCut: 0.6, // hype gains x(1 - cut x labs' share)
 
   // Incidents
   incidentRateBase: 0.14,
@@ -43,9 +47,9 @@ export const B = {
   incidentClicks: [0, 1, 3, 6],
   incidentFailDoom: [0, 2.5, 4.5, 8],
   incidentFailHype: [0, 1.5, 2.5, 4],
-  incidentFixDoom: [0, 0.6, 1.2, 2.4],
-  incidentFixAlign: [0, 0.25, 0.6, 1.2],
-  incidentFixHype: [0, 0.4, 0.8, 1.5],
+  incidentFixDoom: [0, 0.25, 0.5, 1],
+  incidentFixAlign: [0, 0.05, 0.12, 0.25],
+  incidentFixHype: [0, 0.25, 0.5, 1],
   internAutoPerSec: 0.012,
   internAutoMax: 0.35,
 
@@ -77,10 +81,10 @@ export const B = {
     { kind: 'replication', at: 55 },
     { kind: 'paperclip', at: 75 },
   ],
-  shoggoth: { ttl: 32, tentacles: 8, hp: 3, failDoom: 14, failHype: 8 },
-  replication: { ttl: 36, start: 3, every: 4.5, max: 14, failDoomBase: 8 },
-  paperclip: { ttl: 42, coreHp: 24, pileEvery: 1.7, maxPiles: 9, failDoom: 18 },
-  bossWin: { doom: -8, align: 4, hype: 6 },
+  shoggoth: { ttl: 30, tentacles: 10, hp: 4, failDoom: 14, failHype: 8 },
+  replication: { ttl: 36, start: 4, every: 3.2, max: 16, failDoomBase: 8 },
+  paperclip: { ttl: 40, coreHp: 30, pileEvery: 1.5, maxPiles: 9, failDoom: 18 },
+  bossWin: { doom: -8, align: 3, hype: 6 },
   bossIncidentRateMult: 0.35,
   bossDoomPerSec: 0.05, // an unhandled boss is unsettling
 
