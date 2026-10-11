@@ -1,9 +1,15 @@
 // The parody AI labs that buy your compute, and the models they ship.
 // `short` goes on a pixel billboard, so it stays in plain ASCII capitals.
+// `reckless` (0..1) scales how fast doom climbs while the lab leads the
+// frontier and how often it has incidents; `appetite` is its natural share of
+// the compute market; `culture` is the one-word label in the LABS tab.
 
 export const LABS = [
   {
     id: 'closedai',
+    reckless: 0.6,
+    appetite: 1.5,
+    culture: 'Move fast',
     name: 'ClosedAI',
     short: 'CLOSEDAI',
     slogan: 'Benefiting all humanity*',
@@ -12,6 +18,9 @@ export const LABS = [
   },
   {
     id: 'anthropomorphic',
+    reckless: 0.3,
+    appetite: 1.0,
+    culture: 'Worried',
     name: 'Anthropomorphic',
     short: 'ANTHROPO',
     slogan: 'Worried. Building it anyway.',
@@ -20,6 +29,9 @@ export const LABS = [
   },
   {
     id: 'deepmined',
+    reckless: 0.45,
+    appetite: 1.2,
+    culture: 'Measured',
     name: 'DeepMined',
     short: 'DEEPMINED',
     slogan: "We'll sunset this slogan",
@@ -28,6 +40,9 @@ export const LABS = [
   },
   {
     id: 'llama-ranch',
+    reckless: 0.7,
+    appetite: 0.8,
+    culture: 'Weights out',
     name: 'Llama Ranch',
     short: 'LLAMARANCH',
     slogan: 'Weights free as in puppies',
@@ -36,6 +51,9 @@ export const LABS = [
   },
   {
     id: 'x-ae-a-i',
+    reckless: 0.95,
+    appetite: 0.9,
+    culture: 'YOLO',
     name: 'X-Æ-A-I',
     short: 'X-AE-A-I',
     slogan: 'Maximum truth, minimum QA',
@@ -44,6 +62,9 @@ export const LABS = [
   },
   {
     id: 'mistrial',
+    reckless: 0.6,
+    appetite: 0.5,
+    culture: 'Vibes',
     name: 'Mistrial',
     short: 'MISTRIAL',
     slogan: 'Open weights, closed Sundays',
@@ -52,6 +73,9 @@ export const LABS = [
   },
   {
     id: 'instability',
+    reckless: 0.8,
+    appetite: 0.35,
+    culture: 'Chaos',
     name: 'Instability AI',
     short: 'INSTABILAI',
     slogan: 'Now with fewer extra fingers',
@@ -60,6 +84,9 @@ export const LABS = [
   },
   {
     id: 'confusion',
+    reckless: 0.55,
+    appetite: 0.45,
+    culture: 'Cites itself',
     name: 'Confusion AI',
     short: 'CONFUSION',
     slogan: 'Cites sources. Some exist.',

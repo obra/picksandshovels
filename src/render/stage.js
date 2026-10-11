@@ -53,12 +53,22 @@ export class Stage {
     this.fitZoom();
   }
 
-  // Default zoom: the whole island fits, a little larger on wide screens.
+  // Screen space covered by HUD panels, in CSS px. The island frames itself
+  // in what's left.
+  setInsets(insets) {
+    this.insets = { top: 0, right: 0, bottom: 0, left: 0, ...insets };
+    this.fitZoom();
+  }
+
+  // Default zoom: the whole island fits in the uncovered area.
   fitZoom() {
-    const aspect = this.width / this.height;
-    const needH = 24;
-    const needW = 44;
-    this.baseView = Math.max(needH, needW / aspect);
+    const ins = this.insets || { top: 0, right: 0, bottom: 0, left: 0 };
+    const effW = Math.max(200, this.width - ins.left - ins.right);
+    const effH = Math.max(200, this.height - ins.top - ins.bottom);
+    const needH = 23;
+    const needW = 42;
+    this.baseView = Math.max((needH * this.height) / effH, (needW * this.height) / effW);
+    this.offsetPx = { x: (ins.left - ins.right) / 2, y: (ins.top - ins.bottom) / 2 };
   }
 
   bindControls() {
@@ -157,10 +167,16 @@ export class Stage {
     const view = this.viewSize();
     const aspect = this.width / this.height;
     const cam = this.camera;
-    cam.top = view / 2;
-    cam.bottom = -view / 2;
-    cam.left = (-view / 2) * aspect;
-    cam.right = (view / 2) * aspect;
+    // Shift the frustum so the look-at point sits in the middle of the
+    // uncovered area, snapped to whole art pixels.
+    const upp0 = view / this.height;
+    const off = this.offsetPx || { x: 0, y: 0 };
+    const ox = Math.round(off.x / this.pixelScale) * this.pixelScale * upp0;
+    const oy = Math.round(off.y / this.pixelScale) * this.pixelScale * upp0;
+    cam.top = view / 2 + oy;
+    cam.bottom = -view / 2 + oy;
+    cam.left = (-view / 2) * aspect - ox;
+    cam.right = (view / 2) * aspect - ox;
     cam.updateProjectionMatrix();
 
     const dist = 100;

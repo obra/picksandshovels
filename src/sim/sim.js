@@ -23,6 +23,8 @@ const DOOM_CAUSES = ['generic', 'paperclips', 'shoggoth', 'replication', 'engage
 // Doom from the capability gap takes the shape of the era's failure mode.
 const ERA_CAUSE = ['sycophancy', 'sycophancy', 'engagement', 'replication', 'paperclips'];
 const SITE_CAUSE = { hype: 'engagement', home: 'sycophancy', shop: 'sycophancy', compute: 'paperclips' };
+// Serious incident kinds point at the ending they foreshadow.
+const KIND_CAUSE = { escape: 'replication', swarm: 'replication', misalignment: 'shoggoth', rsi: 'paperclips', finance: 'engagement' };
 
 export function createSim(content) {
   const BUILDING = Object.fromEntries(content.buildings.map((b) => [b.id, b]));
@@ -58,12 +60,23 @@ export function createSim(content) {
       lastLab: null,
       owned: {},
       upgrades: {},
+      labs: content.labs.map((l) => ({
+        id: l.id,
+        cumTrain: 0,
+        capBonus: 0,
+        cap: 0,
+        tokens: 0,
+        stance: 'normal',
+        lastModel: null,
+        releases: 0,
+      })),
       plots: MAP.plots.map((p) => ({ id: p.id, filler: p.filler, protected: p.protected, bId: null, level: 0 })),
       incidents: [],
       nextId: 1,
       incidentTimer: 5,
       boss: null,
       bossesStarted: [],
+      bossesWon: [],
       card: null,
       cardTimer: B.firstCardAt,
       usedCards: [],
@@ -165,12 +178,45 @@ export function createSim(content) {
     return m;
   }
 
+  // Who buys your GPUs: natural appetite, nudged by your favor or embargo,
+  // and the leader gets a little extra (everyone wants to sell to the winner).
+  function labMarket(s) {
+    const weights = [];
+    const base = [];
+    let total = 0;
+    let baseTotal = 0;
+    let leader = 0;
+    let embargoes = 0;
+    s.labs.forEach((lab, i) => {
+      const prof = content.labs[i] || {};
+      const appetite = prof.appetite ?? 1;
+      const stance = lab.stance === 'favored' ? B.favorMult : lab.stance === 'embargo' ? 0 : 1;
+      if (lab.stance === 'embargo') embargoes++;
+      const w = appetite * stance * (1 + lab.cap / 50);
+      weights.push(w);
+      base.push(appetite);
+      total += w;
+      baseTotal += appetite;
+      if (lab.cap > s.labs[leader].cap) leader = i;
+    });
+    return {
+      shares: weights.map((w) => (total > 0 ? w / total : 0)),
+      base: base.map((b) => b / baseTotal),
+      leader,
+      embargoes,
+    };
+  }
+
   function derived(s) {
     const compute = statSum(s, 'compute') * upgradeProduct(s, 'computeMult');
     const labCompute = B.labBase * Math.exp(B.labGrowth * s.t);
     const labShare = labCompute / (compute + labCompute);
+    const { shares: labShares, base: labBaseShares, leader, embargoes } = labMarket(s);
+    const sold = labShares.some((x) => x > 0) ? 1 : 0;
     const hypeMult = B.hypeRevenueBase + s.hype / 100;
-    const revenue = compute * B.price * hypeMult * buffMult(s, 'revenue');
+    const revenue =
+      compute * B.price * hypeMult * buffMult(s, 'revenue') * sold * Math.max(0, 1 - B.embargoRevenueCut * embargoes);
+    const leaderReck = content.labs[leader]?.reckless ?? 0.5;
     const research = statSum(s, 'research') * upgradeProduct(s, 'researchMult') * buffMult(s, 'alignRate');
     const paused = s.pauseLeft > 0;
     const capMult = paused ? 0 : upgradeProduct(s, 'capMult') * buffMult(s, 'capRate');
@@ -195,8 +241,9 @@ export function createSim(content) {
     const autoResolve = Math.min(B.internAutoMax, B.internAutoPerSec * statSum(s, 'autoResolve'));
     const doomDamp = statDecay(s, 'doomDamp') * upgradeProduct(s, 'doomGapMult');
     const gap = s.cap - s.align;
+    const recklessness = B.recklessBase + B.recklessScale * leaderReck;
     const doomRate =
-      gap > 0 ? B.doomGapK * gap * doomDamp : -B.doomRecover * Math.min(1, -gap / 10);
+      gap > 0 ? B.doomGapK * gap * doomDamp * recklessness : -B.doomRecover * Math.min(1, -gap / 10);
     return {
       compute,
       revenue,
@@ -214,6 +261,10 @@ export function createSim(content) {
       doomRate,
       doomFloor: s.cap * B.doomFloorPerCap * upgradeProduct(s, 'floorMult'),
       labShare,
+      labShares,
+      labBaseShares,
+      leader,
+      recklessness,
       relevance,
       era: s.era,
       eraName: ERAS[s.era],
@@ -245,7 +296,12 @@ export function createSim(content) {
   }
 
   function recomputeMeters(s) {
-    s.cap = Math.min(100, pointsFromCum(s.cumTrain, B.capC0) + s.capBonus);
+    let frontier = 0;
+    for (const lab of s.labs) {
+      lab.cap = Math.max(0, pointsFromCum(lab.cumTrain, B.labC0) + lab.capBonus);
+      frontier = Math.max(frontier, lab.cap);
+    }
+    s.cap = Math.min(100, frontier + s.capBonus);
     s.align = Math.max(0, pointsFromCum(s.cumSafety, B.alignS0) + s.alignBonus);
   }
 
@@ -345,10 +401,10 @@ export function createSim(content) {
 
   function sitesFor(s, site) {
     const plotSites = (pred) => s.plots.filter(pred).map((p) => ({ kind: 'plot', id: p.id }));
-    const labSites = () => MAP.labs.map((l) => ({ kind: 'lab', id: l.id }));
+    const labSites = () => MAP.labs.filter((l, i) => i < s.labs.length).map((l) => ({ kind: 'lab', id: l.id }));
     switch (site) {
       case 'lab':
-        return labSites();
+        return labSitesWeighted(s);
       case 'compute':
       case 'safety':
       case 'hype':
@@ -359,6 +415,30 @@ export function createSim(content) {
       default:
         return [...plotSites((p) => p.bId || p.filler), ...labSites()];
     }
+  }
+
+  // Reckless and capable labs have more incidents.
+  function labSitesWeighted(s) {
+    const out = [];
+    MAP.labs.forEach((l, i) => {
+      if (i >= s.labs.length) return;
+      const reck = content.labs[i]?.reckless ?? 0.5;
+      const lead = s.cap > 0 ? s.labs[i].cap / s.cap : 1;
+      const n = 1 + Math.round(4 * reck * (0.5 + lead));
+      for (let k = 0; k < n; k++) out.push({ kind: 'lab', id: l.id });
+    });
+    return out;
+  }
+
+  function setLabStance(s, labId, stance) {
+    const i = content.labs.findIndex((l) => l.id === labId);
+    if (i < 0 || !['normal', 'favored', 'embargo'].includes(stance)) return false;
+    const lab = s.labs[i];
+    if (lab.stance === stance) return false;
+    if (stance === 'embargo') addHype(s, -B.embargoHype);
+    lab.stance = stance;
+    emit(s, 'labStance', { lab: content.labs[i].name, stance });
+    return true;
   }
 
   function chooseSite(s, site) {
@@ -388,7 +468,7 @@ export function createSim(content) {
     };
     s.incidents.push(inc);
     s.stats.incidentsSpawned++;
-    emit(s, 'incident', { id: inc.id, templateId, tier: inc.tier, at: inc.at });
+    emit(s, 'incident', { id: inc.id, templateId, tier: inc.tier, kind: tpl.kind || 'gaffe', at: inc.at });
     return inc;
   }
 
@@ -431,7 +511,7 @@ export function createSim(content) {
   function failIncident(s, inc) {
     s.incidents = s.incidents.filter((i) => i !== inc);
     const tpl = INCIDENT[inc.templateId];
-    addDoom(s, B.incidentFailDoom[inc.tier], SITE_CAUSE[tpl?.site] || ERA_CAUSE[s.era]);
+    addDoom(s, B.incidentFailDoom[inc.tier], KIND_CAUSE[tpl?.kind] || SITE_CAUSE[tpl?.site] || ERA_CAUSE[s.era]);
     addHype(s, -B.incidentFailHype[inc.tier]);
     s.stats.incidentsFailed++;
     emit(s, 'incidentFailed', {
@@ -439,6 +519,7 @@ export function createSim(content) {
       at: inc.at,
       tier: inc.tier,
       templateId: inc.templateId,
+      kind: tpl?.kind || 'gaffe',
       headline: tpl?.fail,
     });
   }
@@ -459,7 +540,10 @@ export function createSim(content) {
     s.releases++;
     const options = content.releases[s.releases - 1] || [{ name: `Model-${s.releases}`, tagline: '' }];
     const model = pick(s, options);
-    const lab = pick(s, content.labs);
+    const leader = derived(s).leader;
+    const lab = content.labs[leader];
+    s.labs[leader].lastModel = model.name;
+    s.labs[leader].releases++;
     s.lastModel = model.name;
     s.lastLab = lab.name;
     addHype(s, B.hypeOnRelease * upgradeProduct(s, 'releaseHypeMult'));
@@ -543,6 +627,7 @@ export function createSim(content) {
       addHype(s, B.bossWin.hype);
       recomputeMeters(s);
       s.stats.bossesDefeated++;
+      s.bossesWon.push(boss.kind);
       emit(s, 'bossWin', { kind: boss.kind });
     } else {
       let doom;
@@ -787,10 +872,20 @@ export function createSim(content) {
     const d = derived(s);
 
     addCash(s, d.revenue * h);
+    const capMult = d.paused ? 0 : upgradeProduct(s, 'capMult') * buffMult(s, 'capRate');
+    s.labs.forEach((lab, i) => {
+      const flow = d.compute * d.labShares[i] + d.labCompute * d.labBaseShares[i];
+      lab.cumTrain += flow * capMult * h;
+      lab.tokens += flow * B.tokensPerComputeSec * h;
+    });
     s.cumTrain += d.trainRate * h;
     s.cumSafety += d.research * h;
     recomputeMeters(s);
     checkProgression(s);
+
+    // Old grievances fade, so the ending reflects what went wrong lately.
+    const fade = Math.exp(-h / B.doomCauseMemory);
+    for (const c of DOOM_CAUSES) s.doomCause[c] *= fade;
 
     const d2 = derived(s);
     const gapCause = ERA_CAUSE[s.era];
@@ -885,6 +980,7 @@ export function createSim(content) {
     chooseCard,
     startBoss,
     survivalFlavor,
+    setLabStance,
     content,
   };
 }

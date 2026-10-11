@@ -14,8 +14,17 @@ function newGame(seed = 1) {
   return s;
 }
 
+// Puts every lab at the same capability, so the frontier is exactly `points`.
+function setLabsCap(s, points) {
+  for (const lab of s.labs) {
+    lab.cumTrain = cumFromPoints(points, B.labC0);
+    lab.capBonus = 0;
+    lab.cap = points;
+  }
+}
+
 function setCap(s, points) {
-  s.cumTrain = cumFromPoints(points, B.capC0);
+  setLabsCap(s, points);
   s.capBonus = 0;
   s.cap = points;
   s.releases = Math.floor(points / 10);
@@ -171,6 +180,18 @@ describe('p(doom)', () => {
     expect(s.doom).toBeCloseTo(s.cap * B.doomFloorPerCap, 0);
   });
 
+  it('remembers recent causes of doom better than old ones', () => {
+    const s = newGame();
+    setAlign(s, 95); // no new doom while we wait
+    s.owned.billboard = 40;
+    s.doomCause.sycophancy = 30;
+    s.doomCause.replication = 10;
+    run(s, 300);
+    // Model releases still spawn a few incidents, so allow some fresh doom.
+    expect(s.doomCause.replication).toBeLessThan(10);
+    expect(s.doomCause.sycophancy).toBeLessThan(30 * 0.6);
+  });
+
   it('ends the run in apocalypse at 100, flavored by the biggest cause', () => {
     const s = newGame();
     s.doomCause.engagement = 50;
@@ -250,6 +271,20 @@ describe('incidents', () => {
     expect(s.stats.incidentsFailed).toBe(1);
   });
 
+  it('blame the doom from a missed incident on the ending its kind leads to', () => {
+    const s = newGame();
+    s.doom = 10;
+    const scheme = sim.spawnIncident(s, 'scheme');
+    const exfil = sim.spawnIncident(s, 'exfil');
+    scheme.left = 0.01;
+    exfil.left = 0.01;
+    sim.tick(s, 0.1);
+    expect(s.doomCause.shoggoth).toBeCloseTo(B.incidentFailDoom[1], 6);
+    expect(s.doomCause.replication).toBeCloseTo(B.incidentFailDoom[1], 6);
+    const failed = sim.drainFx(s).filter((f) => f.type === 'incidentFailed');
+    expect(failed.map((f) => f.kind).sort()).toEqual(['escape', 'misalignment']);
+  });
+
   it('the Big Red Button clears every open incident and spends a charge', () => {
     const s = newGame();
     setCap(s, 30);
@@ -269,13 +304,77 @@ describe('model releases', () => {
     setCap(s, 9.99);
     s.releases = 0;
     s.hype = 40;
-    s.cumTrain = cumFromPoints(10.5, B.capC0);
+    setLabsCap(s, 10.5);
     sim.tick(s, 0.1);
     const rel = fxOf(s, 'release');
     expect(rel.length).toBe(1);
     expect(rel[0].model).toBe('Glorp-1');
     expect(fixtureContent.labs.map((l) => l.name)).toContain(rel[0].lab);
     expect(s.hype).toBeGreaterThan(40 + B.hypeOnRelease - 1);
+  });
+});
+
+describe('labs', () => {
+  it('each lab trains on its share of your GPUs and burns tokens', () => {
+    const s = newGame();
+    const shares = sim.derived(s).labShares;
+    expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 6);
+    run(s, 20);
+    for (const lab of s.labs) {
+      expect(lab.cumTrain).toBeGreaterThan(0);
+      expect(lab.tokens).toBeGreaterThan(0);
+    }
+  });
+
+  it('the frontier is whichever lab leads', () => {
+    const s = newGame();
+    s.labs[1].cumTrain = cumFromPoints(30, B.labC0);
+    run(s, 0.1);
+    expect(s.cap).toBeCloseTo(Math.max(...s.labs.map((l) => l.cap)), 6);
+    expect(sim.derived(s).leader).toBe(1);
+  });
+
+  it('favoring a lab steers your GPUs to it', () => {
+    const s = newGame();
+    const before = sim.derived(s).labShares[1];
+    expect(sim.setLabStance(s, 'anthro', 'favored')).toBe(true);
+    expect(sim.derived(s).labShares[1]).toBeGreaterThan(before * 1.4);
+    run(s, 30);
+    expect(s.labs[1].cap).toBeGreaterThan(s.labs[0].cap);
+  });
+
+  it('an embargoed lab gets none of your GPUs, and embargoing everyone sells nothing', () => {
+    const s = newGame();
+    s.hype = 50;
+    sim.setLabStance(s, 'closed', 'embargo');
+    expect(sim.derived(s).labShares[0]).toBe(0);
+    expect(s.hype).toBeLessThan(50);
+    expect(sim.derived(s).revenue).toBeGreaterThan(0);
+    sim.setLabStance(s, 'anthro', 'embargo');
+    expect(sim.derived(s).revenue).toBe(0);
+    sim.setLabStance(s, 'anthro', 'normal');
+    expect(sim.derived(s).revenue).toBeGreaterThan(0);
+  });
+
+  it('model releases come from the lab that crossed the line', () => {
+    const s = newGame();
+    s.labs[1].cumTrain = cumFromPoints(10.4, B.labC0);
+    sim.tick(s, 0.1);
+    const rel = fxOf(s, 'release');
+    expect(rel[0].lab).toBe('Anthropomorphic');
+    expect(s.labs[1].lastModel).toBe(rel[0].model);
+  });
+
+  it('a reckless lab at the frontier makes doom climb faster than a careful one', () => {
+    const reckless = newGame();
+    const careful = newGame();
+    for (const [s, lead] of [[reckless, 0], [careful, 1]]) {
+      setLabsCap(s, 20);
+      s.labs[lead].cumTrain = cumFromPoints(30, B.labC0);
+      s.doom = 10;
+      run(s, 10);
+    }
+    expect(reckless.doom).toBeGreaterThan(careful.doom + 0.5);
   });
 });
 
@@ -347,7 +446,7 @@ describe('bosses', () => {
     const s = newGame();
     setCap(s, 34);
     s.bossesStarted = [];
-    s.cumTrain = cumFromPoints(35.2, B.capC0);
+    setLabsCap(s, 35.2);
     sim.tick(s, 0.1);
     expect(s.boss.kind).toBe('shoggoth');
     s.doom = 50;
@@ -355,6 +454,7 @@ describe('bosses', () => {
     expect(s.boss).toBe(null);
     expect(s.doom).toBeLessThan(50);
     expect(s.stats.bossesDefeated).toBe(1);
+    expect(s.bossesWon).toEqual(['shoggoth']);
   });
 
   it('a Shoggoth left alone spikes doom and gets the blame', () => {
@@ -404,7 +504,7 @@ describe('the singularity', () => {
       setCap(s, 99.9);
       setAlign(s, 99.9);
       s.doom = 50;
-      s.cumTrain = cumFromPoints(100.5, B.capC0);
+      setLabsCap(s, 100.5);
       sim.tick(s, 0.1);
       expect(s.phase).toBe('over');
       expect(s.ending.roll).toBeGreaterThanOrEqual(1);

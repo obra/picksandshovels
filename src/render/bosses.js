@@ -12,7 +12,9 @@ import { P } from './palette.js';
 import { blob, cylinder } from './models/common.js';
 import { OFFSET } from './city.js';
 
-const SHOGGOTH_HOME = new THREE.Vector3(6 + OFFSET, -0.4, 33.5 + OFFSET);
+// In the west bay, reaching east across the city.
+const SHOGGOTH_HOME = new THREE.Vector3(-2.5 + OFFSET, -0.4, 13 + OFFSET);
+const TO_CITY = Math.atan2(15 - 13, 15 + 2.5);
 const SEGMENTS = 9;
 const tmpM = new THREE.Matrix4();
 const tmpQ = new THREE.Quaternion();
@@ -212,7 +214,8 @@ export class Bosses {
     const ease = this.rise * this.rise * (3 - 2 * this.rise);
     this.shoggoth.scale.setScalar(scale);
     this.shoggoth.position.set(SHOGGOTH_HOME.x, SHOGGOTH_HOME.y - 4.5 * scale * (1 - ease) + Math.sin(time * 0.8) * 0.15, SHOGGOTH_HOME.z);
-    this.shoggoth.rotation.y = Math.sin(time * 0.3) * 0.12 + 0.35;
+    // Face the mask toward the camera side of the bay.
+    this.shoggoth.rotation.y = Math.sin(time * 0.3) * 0.12 + 1.0;
 
     const n = this.tentacleCount();
     const parts = boss?.kind === 'shoggoth' ? boss.parts : [];
@@ -222,9 +225,9 @@ export class Bosses {
         continue;
       }
       // Fan the tentacles toward the island.
-      const spread = (t / (n - 1) - 0.5) * 2.2;
-      const ang = -Math.PI / 2 + spread + 0.4;
-      const reach = (3.6 + (t % 3) * 0.7) * scale;
+      const spread = (t / (n - 1) - 0.5) * 2.4;
+      const ang = TO_CITY + spread;
+      const reach = (3.4 + (t % 3) * 1.4) * scale;
       const base = tmpV.set(Math.cos(ang) * 1.5 * scale, 0, Math.sin(ang) * 1.5 * scale).add(this.shoggoth.position);
       const part = parts.find((p) => p.index === t);
       const masked = part ? part.hp <= 0 : false;

@@ -15,6 +15,7 @@ import { voxelMaterial } from './material.js';
 import { LOT } from './terrain.js';
 
 const DAY_SECONDS = 80;
+const KIND_SMOKE = { bio: 0x8fdc5a, cyber: 0x2f6a3a, escape: 0x9a4a8c, rsi: 0x6a4aa8 };
 
 function dayCurve(phase) {
   if (phase < 0.55) return 1;
@@ -119,7 +120,7 @@ export class World {
       while (b.acc >= 1) {
         b.acc -= 1;
         const p = this.city.sitePoint(b.at, this.tmp);
-        this.fx.smoke(p.x, p.y - 0.2, p.z, 0x3a3a44, 1.2);
+        this.fx.smoke(p.x, p.y - 0.2, p.z, b.color ?? 0x3a3a44, 1.2);
       }
     }
     this.burning = this.burning.filter((b) => b.left > 0);
@@ -167,7 +168,8 @@ export class World {
       case 'incidentFailed': {
         const p = this.city.sitePoint(at, this.tmp);
         this.fx.burst(p.x, p.y, p.z, [P.red, P.orange, P.ink, P.yellow], 22 + f.tier * 6, 3);
-        this.burning.push({ at, left: 10 + f.tier * 5, acc: 0 });
+        this.kindFailure(f.kind, at, p);
+        this.burning.push({ at, left: 10 + f.tier * 5, acc: 0, color: KIND_SMOKE[f.kind] });
         this.stage.shake = Math.max(this.stage.shake, 0.4 + f.tier * 0.25);
         break;
       }
@@ -220,6 +222,57 @@ export class World {
         break;
       case 'ending':
         this.startEnding(f.ending, state);
+        break;
+      default:
+    }
+  }
+
+  // Each kind of incident fails in its own way.
+  kindFailure(kind, at, p) {
+    const fx = this.fx;
+    switch (kind) {
+      case 'escape':
+        // The weights leave. Upward. Quickly.
+        for (let i = 0; i < 6; i++) {
+          fx.spawn(p.x, p.y, p.z, { vx: (Math.random() - 0.5) * 2, vy: 6 + Math.random() * 3, vz: (Math.random() - 0.5) * 2, life: 2.2, size: 0.22, color: P.weights, spin: 4 });
+        }
+        break;
+      case 'cyber':
+        for (let i = 0; i < 30; i++) {
+          fx.spawn(p.x + (Math.random() - 0.5) * 1.6, p.y - Math.random(), p.z + (Math.random() - 0.5) * 1.6, { vy: 1 + Math.random() * 1.5, life: 1.8, size: 0.07, color: i % 3 ? P.neonGreen : 0x1f8a3a });
+        }
+        break;
+      case 'finance':
+        fx.burst(p.x, p.y, p.z, [P.yellow, 0xffe382, 0xd9a520, P.green], 40, 4);
+        break;
+      case 'bio':
+        for (let i = 0; i < 24; i++) {
+          const a = Math.random() * Math.PI * 2;
+          fx.spawn(p.x, 0.2, p.z, { vx: Math.cos(a) * 1.2, vz: Math.sin(a) * 1.2, vy: 0.4, g: -1, life: 3, size: 0.16, grow: 0.1, drag: 1.5, color: i % 2 ? P.lime : 0x6aa51f, floor: 0.16 });
+        }
+        break;
+      case 'swarm':
+        for (let i = 0; i < 20; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = 4 + Math.random() * 2;
+          fx.spawn(p.x + Math.cos(a) * r, p.y + 2 + Math.random() * 2, p.z + Math.sin(a) * r, { vx: -Math.cos(a) * r * 0.9, vy: -1.2, vz: -Math.sin(a) * r * 0.9, life: 1.1, size: 0.09, color: i % 2 ? P.white : P.ink, spin: 10 });
+        }
+        break;
+      case 'rsi': {
+        // The building briefly gets bigger. Then it decides to stay a bit bigger.
+        if (at.kind === 'plot') {
+          const g = this.city.plots[at.id].group;
+          if (g) {
+            g.scale.y = 1.5;
+            setTimeout(() => (g.scale.y = 1.08), 500);
+          }
+        }
+        fx.burst(p.x, p.y, p.z, [P.purple, P.neonPink, P.white], 24, 2.5);
+        break;
+      }
+      case 'misalignment':
+        U.uFlash.value = Math.max(U.uFlash.value, 0.25);
+        fx.burst(p.x, p.y, p.z, [P.smiley, P.red, P.ink], 20, 2.5);
         break;
       default:
     }

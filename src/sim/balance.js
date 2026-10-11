@@ -18,6 +18,15 @@ export const B = {
   pointsPerDecade: 20,
   capC0: 180,
   alignS0: 180,
+  // Each lab's capability is log10 of its own cumulative training compute.
+  labC0: 45,
+  tokensPerComputeSec: 1e6, // one compute unit (1,000 GPUs) serves a million tokens a second
+  favorMult: 3,
+  embargoRevenueCut: 0.04, // per embargoed lab: they were paying a premium
+  embargoHype: 2,
+  // Gap doom x(recklessBase + recklessScale x the leading lab's recklessness).
+  recklessBase: 0.6,
+  recklessScale: 0.8,
   // The rest of the industry trains whether or not you sell to it.
   labBase: 1.6,
   labGrowth: 0.0085, // per second, exponential
@@ -27,6 +36,7 @@ export const B = {
   doomRecover: 0.1, // per second when alignment leads by 10+
   doomFloorPerCap: 0.2, // irreducible risk grows with capability; upgrades shrink it
   doomPerActiveTier: 0.012, // per second per tier of open incident
+  doomCauseMemory: 150, // seconds; older causes fade when picking the ending
 
   // Hype
   hypeDecayBase: 0.1,

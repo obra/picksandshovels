@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { GRID, BLOCK, STRIDE, ORIGIN, tileKind } from '../sim/map.js';
 import { VoxelBuilder } from './voxel.js';
 import { voxelMaterial } from './material.js';
-import { P, SHIRTS, SKINS, CAR_COLORS } from './palette.js';
+import { P, SHIRTS, SKINS } from './palette.js';
 import { CURB, GROUND } from './terrain.js';
 import { OFFSET } from './city.js';
 import { blob, cylinder } from './models/common.js';
@@ -27,21 +27,127 @@ function personGeometry() {
   return vb.build();
 }
 
-function carGeometry() {
+// Every car in the Valley drives itself. Models are built along +x.
+function wheels(vb, l, w, r = 0.045) {
+  for (const x of [-l / 2 + 0.06, l / 2 - 0.06]) {
+    vb.box(x - r, 0, -w / 2 - 0.006, x + r, r * 1.2, -w / 2 + 0.03, P.black);
+    vb.box(x - r, 0, w / 2 - 0.03, x + r, r * 1.2, w / 2 + 0.006, P.black);
+  }
+}
+
+function lights(vb, l, w, y) {
+  vb.box(l / 2 - 0.004, y, -w / 2 + 0.02, l / 2 + 0.006, y + 0.025, -w / 2 + 0.05, P.windowLit, { emit: 2 });
+  vb.box(l / 2 - 0.004, y, w / 2 - 0.05, l / 2 + 0.006, y + 0.025, w / 2 - 0.02, P.windowLit, { emit: 2 });
+  vb.box(-l / 2 - 0.006, y, -w / 2 + 0.02, -l / 2 + 0.004, y + 0.025, -w / 2 + 0.05, P.red, { emit: 2 });
+  vb.box(-l / 2 - 0.006, y, w / 2 - 0.05, -l / 2 + 0.004, y + 0.025, w / 2 - 0.02, P.red, { emit: 2 });
+}
+
+const CAR_MODELS = {
+  // White crossover with a spinning lidar dome and corner sensor pods.
+  dome(vb) {
+    const l = 0.38;
+    const w = 0.19;
+    vb.box(-l / 2, 0.035, -w / 2, l / 2, 0.12, w / 2, P.white, { tint: 1 });
+    vb.box(-l * 0.3, 0.12, -w * 0.44, l * 0.24, 0.18, w * 0.44, P.ink, { emit: 1 });
+    vb.box(-l * 0.28, 0.18, -w * 0.4, l * 0.22, 0.19, w * 0.4, P.white, { tint: 1 });
+    vb.box(-0.035, 0.19, -0.035, 0.035, 0.235, 0.035, P.ink);
+    vb.box(-0.03, 0.235, -0.03, 0.03, 0.255, 0.03, P.cyan, { emit: 3 });
+    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) vb.box(x * l * 0.45 - 0.015, 0.12, z * w * 0.5 - 0.015, x * l * 0.45 + 0.015, 0.15, z * w * 0.5 + 0.015, P.ink);
+    wheels(vb, l, w);
+    lights(vb, l, w, 0.07);
+  },
+  // Hatchback wearing a tall sensor tiara.
+  tiara(vb) {
+    const l = 0.34;
+    const w = 0.18;
+    vb.box(-l / 2, 0.035, -w / 2, l / 2, 0.11, w / 2, P.white, { tint: 1 });
+    vb.box(-l * 0.35, 0.11, -w * 0.44, l * 0.2, 0.17, w * 0.44, P.ink, { emit: 1 });
+    vb.box(-l * 0.33, 0.17, -w * 0.42, l * 0.18, 0.18, w * 0.42, P.white, { tint: 1 });
+    vb.box(-0.08, 0.18, -w * 0.46, 0.06, 0.21, w * 0.46, P.orange);
+    vb.box(-0.05, 0.21, -0.05, 0.03, 0.25, 0.05, P.ink);
+    vb.box(-0.04, 0.25, -0.03, 0.02, 0.27, 0.03, P.orange, { emit: 3 });
+    vb.box(-l / 2, 0.08, -w / 2 - 0.004, l / 2, 0.095, w / 2 + 0.004, P.orange);
+    wheels(vb, l, w);
+    lights(vb, l, w, 0.06);
+  },
+  // Symmetric toaster pod: no front, no back, lidar on every corner.
+  toaster(vb) {
+    const l = 0.36;
+    const w = 0.2;
+    vb.box(-l / 2, 0.035, -w / 2, l / 2, 0.22, w / 2, P.white, { tint: 1 });
+    vb.panel('+z', w / 2, -l / 2 + 0.03, 0.1, l / 2 - 0.03, 0.19, P.ink, 1);
+    vb.panel('-z', -w / 2, -l / 2 + 0.03, 0.1, l / 2 - 0.03, 0.19, P.ink, 1);
+    vb.panel('+x', l / 2, -w / 2 + 0.03, 0.12, w / 2 - 0.03, 0.19, P.ink, 1);
+    vb.panel('-x', -l / 2, -w / 2 + 0.03, 0.12, w / 2 - 0.03, 0.19, P.ink, 1);
+    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) vb.box(x * l / 2 - 0.025, 0.22, z * w / 2 - 0.025, x * l / 2 + 0.025, 0.26, z * w / 2 + 0.025, P.ink, { topEmit: 0 });
+    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) vb.box(x * l / 2 - 0.015, 0.26, z * w / 2 - 0.015, x * l / 2 + 0.015, 0.27, z * w / 2 + 0.015, P.cyan, { emit: 3 });
+    vb.box(-l / 2 + 0.01, 0.06, -w / 2 - 0.004, l / 2 - 0.01, 0.075, w / 2 + 0.004, P.teal, { emit: 2 });
+    wheels(vb, l, w, 0.04);
+  },
+  // Two-seat gold coupe. No sensors. Vibes only.
+  cybercab(vb) {
+    const l = 0.36;
+    const w = 0.17;
+    vb.box(-l / 2, 0.03, -w / 2, l / 2, 0.08, w / 2, P.white, { tint: 1 });
+    vb.box(-l * 0.32, 0.08, -w * 0.42, l * 0.3, 0.12, w * 0.42, P.white, { tint: 1 });
+    vb.box(-l * 0.18, 0.12, -w * 0.38, l * 0.2, 0.155, w * 0.38, P.ink, { emit: 1 });
+    vb.box(l / 2 - 0.004, 0.05, -w / 2 + 0.01, l / 2 + 0.006, 0.06, w / 2 - 0.01, P.white, { emit: 2 });
+    vb.box(-l / 2 - 0.006, 0.05, -w / 2 + 0.01, -l / 2 + 0.004, 0.06, w / 2 - 0.01, P.red, { emit: 2 });
+    wheels(vb, l, w, 0.04);
+  },
+  // Stainless steel wedge.
+  wedge(vb) {
+    const l = 0.42;
+    const w = 0.2;
+    vb.box(-l / 2, 0.04, -w / 2, l / 2, 0.12, w / 2, P.white, { tint: 1 });
+    for (let i = 0; i < 5; i++) {
+      const x0 = -l / 2 + 0.02 + i * 0.03;
+      vb.box(x0, 0.12, -w * 0.45, l * 0.3 - i * 0.045, 0.14 + i * 0.012, w * 0.45, P.white, { tint: 1 });
+    }
+    vb.box(-l * 0.05, 0.13, -w * 0.4, l * 0.2, 0.17, w * 0.4, P.ink, { emit: 1 });
+    vb.box(l / 2 - 0.004, 0.1, -w / 2 + 0.01, l / 2 + 0.006, 0.11, w / 2 - 0.01, P.white, { emit: 2 });
+    wheels(vb, l, w, 0.05);
+  },
+  // Tiny delivery pod: half-width, no seats, groceries only.
+  pod(vb) {
+    const l = 0.26;
+    const w = 0.13;
+    vb.box(-l / 2, 0.03, -w / 2, l / 2, 0.17, w / 2, P.white, { tint: 1 });
+    vb.box(l / 2 - 0.05, 0.1, -w / 2 + 0.01, l / 2 + 0.004, 0.16, w / 2 - 0.01, P.ink, { emit: 1 });
+    vb.panel('+z', w / 2, -l / 2 + 0.03, 0.05, l / 2 - 0.07, 0.14, P.green, 2);
+    vb.box(-0.02, 0.17, -0.02, 0.02, 0.2, 0.02, P.ink);
+    wheels(vb, l, w, 0.035);
+    lights(vb, l, w, 0.05);
+  },
+};
+
+const CAR_FLEET = [
+  { model: 'dome', count: 12, colors: [0xf3f0e8, 0xffffff] },
+  { model: 'tiara', count: 8, colors: [0xf3f0e8, 0xffffff] },
+  { model: 'toaster', count: 7, colors: [0x4f5d6e, 0x3e4a5a, 0xe0e4ea] },
+  { model: 'cybercab', count: 7, colors: [0xd9b45a, 0xc9c9d6] },
+  { model: 'wedge', count: 5, colors: [0xb8bfcc, 0xa8afbc] },
+  { model: 'pod', count: 7, colors: [0xe8eef4, 0xdfe6ec] },
+];
+
+function carGeometry(model) {
   const vb = new VoxelBuilder();
-  const l = 0.36;
-  const w = 0.18;
-  vb.box(-l / 2, 0.03, -w / 2, l / 2, 0.11, w / 2, P.white, { tint: 1 });
-  vb.box(-l * 0.28, 0.11, -w * 0.42, l * 0.22, 0.17, w * 0.42, P.glass, { emit: 1 });
-  vb.box(-l * 0.25, 0.17, -w * 0.4, l * 0.2, 0.18, w * 0.4, P.white, { tint: 1 });
-  vb.box(-l / 2 + 0.02, 0, -w / 2 - 0.005, -l / 2 + 0.09, 0.05, w / 2 + 0.005, P.black);
-  vb.box(l / 2 - 0.09, 0, -w / 2 - 0.005, l / 2 - 0.02, 0.05, w / 2 + 0.005, P.black);
-  vb.box(l / 2 - 0.005, 0.06, -w / 2 + 0.02, l / 2 + 0.005, 0.09, -w / 2 + 0.05, P.windowLit, { emit: 2 });
-  vb.box(l / 2 - 0.005, 0.06, w / 2 - 0.05, l / 2 + 0.005, 0.09, w / 2 - 0.02, P.windowLit, { emit: 2 });
-  vb.box(-l / 2 - 0.005, 0.06, -w / 2 + 0.02, -l / 2 + 0.005, 0.09, -w / 2 + 0.05, P.red, { emit: 2 });
-  vb.box(-l / 2 - 0.005, 0.06, w / 2 - 0.05, -l / 2 + 0.005, 0.09, w / 2 - 0.02, P.red, { emit: 2 });
-  // Roof lidar on everything. They're all robotaxis now.
-  vb.box(-0.025, 0.18, -0.025, 0.025, 0.21, 0.025, P.ink);
+  CAR_MODELS[model](vb);
+  return vb.build();
+}
+
+// Six-wheeled sidewalk delivery robot with a little orange flag.
+function sidewalkBotGeometry() {
+  const vb = new VoxelBuilder();
+  vb.box(-0.05, 0.025, -0.035, 0.05, 0.085, 0.035, P.white);
+  vb.box(-0.052, 0.085, -0.037, 0.052, 0.095, 0.037, P.ink);
+  for (const x of [-0.04, 0, 0.04]) {
+    vb.box(x - 0.012, 0, -0.04, x + 0.012, 0.025, -0.03, P.black);
+    vb.box(x - 0.012, 0, 0.03, x + 0.012, 0.025, 0.04, P.black);
+  }
+  vb.box(-0.042, 0.095, -0.003, -0.038, 0.2, 0.003, P.ink);
+  vb.box(-0.038, 0.17, -0.002, -0.005, 0.2, 0.002, P.orange, { emit: 2 });
+  vb.box(0.05, 0.05, -0.02, 0.052, 0.065, 0.02, P.cyan, { emit: 3 });
   return vb.build();
 }
 
@@ -196,19 +302,34 @@ export class Life {
     }
     this.root.add(this.people);
 
-    // Cars.
+    // Cars: a fleet of self-driving models, one instanced mesh per model.
     this.lanes = roadLanes(map);
-    const C = 46;
-    this.cars = new THREE.InstancedMesh(carGeometry(), mat, C);
-    this.cars.frustumCulled = false;
-    this.drivers = [];
-    for (let i = 0; i < C; i++) {
-      this.cars.setColorAt(i, tmpC.set(CAR_COLORS[i % CAR_COLORS.length]));
-      const lane = this.lanes[i % this.lanes.length];
-      const dir = i % 2 ? 1 : -1;
-      this.drivers.push({ lane, dir, pos: lane.from + Math.random() * (lane.to - lane.from), speed: 1.1 + Math.random() * 0.9 });
+    this.fleet = [];
+    let k = 0;
+    for (const spec of CAR_FLEET) {
+      const mesh = new THREE.InstancedMesh(carGeometry(spec.model), mat, spec.count);
+      mesh.frustumCulled = false;
+      const drivers = [];
+      for (let i = 0; i < spec.count; i++, k++) {
+        mesh.setColorAt(i, tmpC.set(spec.colors[i % spec.colors.length]));
+        const lane = this.lanes[(k * 7) % this.lanes.length];
+        const dir = k % 2 ? 1 : -1;
+        drivers.push({ lane, dir, pos: lane.from + Math.random() * (lane.to - lane.from), speed: 1.0 + Math.random() * 0.8 });
+      }
+      this.root.add(mesh);
+      this.fleet.push({ mesh, drivers });
     }
-    this.root.add(this.cars);
+
+    // Sidewalk delivery robots share the pedestrians' loops.
+    const R = 18;
+    this.bots = new THREE.InstancedMesh(sidewalkBotGeometry(), mat, R);
+    this.bots.frustumCulled = false;
+    this.botWalkers = [];
+    for (let i = 0; i < R; i++) {
+      this.bots.setColorAt(i, tmpC.set(0xffffff));
+      this.botWalkers.push({ loop: this.loops[(i * 5) % this.loops.length], s: Math.random() * 16, speed: 0.18 * (i % 2 ? 1 : -1) });
+    }
+    this.root.add(this.bots);
 
     // Drones.
     const D = 40;
@@ -233,7 +354,8 @@ export class Life {
     this.clouds = [];
     for (let i = 0; i < 8; i++) {
       const m = new THREE.Mesh(cloudGeometry(i * 5 + 2), mat);
-      m.position.set(-24 + i * 10, 8 + (i % 3) * 1.6, -14 + ((i * 17) % 52));
+      // Keep clouds behind the island so they never cover the streets.
+      m.position.set(-24 + i * 10, 6 + (i % 3) * 1.4, -16 + ((i * 7) % 9));
       this.root.add(m);
       this.clouds.push(m);
     }
@@ -283,30 +405,44 @@ export class Life {
     }
     this.people.instanceMatrix.needsUpdate = true;
 
-    for (let i = 0; i < this.drivers.length; i++) {
-      const d = this.drivers[i];
-      const L = d.lane;
-      d.pos += d.dir * d.speed * dt * (this.frozen ? 0 : 1 + this.panic);
-      if (d.pos > L.to) d.pos = L.from;
-      if (d.pos < L.from) d.pos = L.to;
-      const off = 0.5 + d.dir * 0.22;
-      let x;
-      let z;
-      let ang;
-      if (L.axis === 'x') {
-        x = d.pos;
-        z = L.line + off;
-        ang = d.dir > 0 ? 0 : Math.PI;
-      } else {
-        x = L.line + 1 - off;
-        z = d.pos;
-        ang = d.dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+    const drive = this.frozen ? 0 : 1 + this.panic;
+    for (const { mesh, drivers } of this.fleet) {
+      for (let i = 0; i < drivers.length; i++) {
+        const d = drivers[i];
+        const L = d.lane;
+        d.pos += d.dir * d.speed * dt * drive;
+        if (d.pos > L.to) d.pos = L.from;
+        if (d.pos < L.from) d.pos = L.to;
+        const off = 0.5 + d.dir * 0.22;
+        let x;
+        let z;
+        let ang;
+        if (L.axis === 'x') {
+          x = d.pos;
+          z = L.line + off;
+          ang = d.dir > 0 ? 0 : Math.PI;
+        } else {
+          x = L.line + 1 - off;
+          z = d.pos;
+          ang = d.dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+        }
+        tmpQ.setFromAxisAngle(UP, ang);
+        tmpM.compose(tmpP.set(x, GROUND, z), tmpQ, tmpS.set(1, 1, 1));
+        mesh.setMatrixAt(i, tmpM);
       }
-      tmpQ.setFromAxisAngle(UP, ang);
-      tmpM.compose(tmpP.set(x, GROUND, z), tmpQ, tmpS.set(1, 1, 1));
-      this.cars.setMatrixAt(i, tmpM);
+      mesh.instanceMatrix.needsUpdate = true;
     }
-    this.cars.instanceMatrix.needsUpdate = true;
+
+    for (let i = 0; i < this.botWalkers.length; i++) {
+      const w = this.botWalkers[i];
+      w.s += w.speed * dt * speedK;
+      const [x, z, dx, dz] = loopPoint(w.loop, w.s);
+      const dir = Math.sign(w.speed);
+      tmpQ.setFromAxisAngle(UP, Math.atan2(-dz * dir, dx * dir));
+      tmpM.compose(tmpP.set(x, CURB, z), tmpQ, tmpS.set(1, 1, 1));
+      this.bots.setMatrixAt(i, tmpM);
+    }
+    this.bots.instanceMatrix.needsUpdate = true;
 
     for (let i = 0; i < this.flyers.length; i++) {
       const f = this.flyers[i];

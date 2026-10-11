@@ -19,6 +19,7 @@ import {
 
 const ERA_CAPS = [0, 20, 40, 60, 80];
 const SITES = ['lab', 'compute', 'safety', 'hype', 'home', 'shop', 'any'];
+const KINDS = ['gaffe', 'escape', 'cyber', 'finance', 'bio', 'swarm', 'rsi', 'misalignment'];
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -97,11 +98,21 @@ describe('incidents', () => {
     expect(share(3)).toBeLessThanOrEqual(0.2);
   });
 
-  it('covers every era with about 16 incidents each', () => {
+  it('covers every era without piling into one', () => {
     for (const cap of ERA_CAPS) {
       const n = INCIDENTS.filter((i) => i.minCap === cap).length;
       expect(n, `incidents at minCap ${cap}`).toBeGreaterThanOrEqual(14);
-      expect(n, `incidents at minCap ${cap}`).toBeLessThanOrEqual(20);
+      expect(n, `incidents at minCap ${cap}`).toBeLessThanOrEqual(32);
+    }
+  });
+
+  it('uses only known kinds, with a missing kind meaning gaffe', () => {
+    expect(INCIDENTS.filter((i) => 'kind' in i && !KINDS.includes(i.kind)).map((i) => i.id)).toEqual([]);
+  });
+
+  it('has at least 5 incidents of every serious kind', () => {
+    for (const kind of KINDS.filter((k) => k !== 'gaffe')) {
+      expect(INCIDENTS.filter((i) => i.kind === kind).length, kind).toBeGreaterThanOrEqual(5);
     }
   });
 

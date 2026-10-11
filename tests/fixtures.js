@@ -5,8 +5,8 @@ export const fixtureContent = {
   buildings: BUILDINGS,
   upgrades: UPGRADES,
   labs: [
-    { id: 'closed', name: 'ClosedAI', short: 'CLOSEDAI', slogan: 's', color: '#fff', accent: '#000' },
-    { id: 'anthro', name: 'Anthropomorphic', short: 'ANTHRO', slogan: 's', color: '#fa0', accent: '#000' },
+    { id: 'closed', name: 'ClosedAI', short: 'CLOSEDAI', slogan: 's', color: '#fff', accent: '#000', reckless: 0.9, appetite: 1, culture: 'YOLO' },
+    { id: 'anthro', name: 'Anthropomorphic', short: 'ANTHRO', slogan: 's', color: '#fa0', accent: '#000', reckless: 0.2, appetite: 1, culture: 'Worried' },
   ],
   releases: Array.from({ length: 10 }, (_, i) => [{ name: `Glorp-${i + 1}`, tagline: 't' }]),
   incidents: [
@@ -15,6 +15,8 @@ export const fixtureContent = {
     { id: 'lab', text: 'Lab thing', site: 'lab', tier: 3, minCap: 0, fail: 'Lab', fix: 'ok' },
     { id: 'hype', text: 'Hype thing', site: 'hype', tier: 1, minCap: 0, fail: 'Hype', fix: 'ok' },
     { id: 'late', text: 'Late thing', site: 'any', tier: 1, minCap: 80, fail: 'Late', fix: 'ok' },
+    { id: 'scheme', text: 'Model schemes', site: 'lab', tier: 1, minCap: 0, kind: 'misalignment', fail: 'Schemed', fix: 'ok' },
+    { id: 'exfil', text: 'Weights escape', site: 'lab', tier: 1, minCap: 0, kind: 'escape', fail: 'Escaped', fix: 'ok' },
   ],
   events: [
     {
