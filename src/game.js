@@ -378,8 +378,7 @@ export class Game {
         break;
       case 'release':
         if (f.flop) {
-          audio.sfx('fail');
-          audio.sfx('winterEnd');
+          audio.sfx('winterEnd'); // the sad trombone
           this.notify.banner('boss', `LAUNCH FLOP · MODEL #${f.n}`, `${f.lab} ships ${f.model}`, f.flopLine, 5200);
           this.ticker.breaking(f.flopHeadline);
         } else {
