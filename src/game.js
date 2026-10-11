@@ -429,7 +429,7 @@ export class Game {
         const p = this.world.project(this.world.life.blimpPos, { x: 0, y: 0 });
         this.targets.floater(`+${money(f.cash)}`, p.x, p.y, 'gold');
         const q = CONTENT.flavor.BLIMP_QUIPS;
-        this.targets.floater(q[f.quip % q.length], p.x, p.y + 34, 'quip');
+        this.notify.toast('TERM SHEET SIGNED', q[f.quip % q.length], 'coin');
         break;
       }
       case 'boss':

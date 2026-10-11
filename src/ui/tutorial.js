@@ -67,6 +67,7 @@ export class Tutorial {
     this.onFinish = onFinish;
     this.el = null;
     this.hideAt = 0;
+    this.nextAt = 0;
   }
 
   get finished() {
@@ -82,6 +83,8 @@ export class Tutorial {
   update(s, now) {
     if (this.el && now > this.hideAt) this.hide();
     if (this.el || this.finished) return;
+    // Give each tip room: never two within 15 seconds.
+    if (now < this.nextAt) return;
     const tip = TIPS.find((t) => !this.done.has(t.id) && t.when(s));
     if (!tip) return;
     this.done.add(tip.id);
@@ -93,7 +96,8 @@ export class Tutorial {
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } }, h('button.btn', { onclick: () => this.hide() }, 'OK'), h('button.btn.ghost', { onclick: () => this.skipAll() }, 'NO TIPS')),
     );
     this.root.append(this.el);
-    this.hideAt = now + 11000;
+    this.hideAt = now + 14000;
+    this.nextAt = now + 15000;
     if (this.finished) this.onFinish();
   }
 

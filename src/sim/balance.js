@@ -54,9 +54,13 @@ export const B = {
   irrelevanceGainCut: 0.6, // hype gains x(1 - cut x labs' share)
 
   // Incidents
-  incidentRateBase: 0.14,
-  incidentRatePerCap: 0.0042,
+  incidentRateBase: 0.09,
+  incidentRatePerCap: 0.005,
   incidentMax: 7,
+  firstIncidentAt: 9,
+  // Early incidents give more time to read them; the bonus fades by capability 30.
+  earlyTimeBonus: 0.4,
+  earlyUntilCap: 30,
   incidentTime: [0, 10, 13, 16],
   incidentClicks: [0, 1, 3, 6],
   incidentFailDoom: [0, 2.5, 4.5, 8],
@@ -87,12 +91,12 @@ export const B = {
   openRelease: { floorAdd: 0.5, incidentMult: 1.3, secs: 20 },
 
   // Decision cards
-  firstCardAt: 28,
-  cardEvery: [38, 55],
+  firstCardAt: 45,
+  cardEvery: [45, 65],
   cardAfterBoss: 8,
 
   // VC blimp
-  firstBlimpAt: 45,
+  firstBlimpAt: 75,
   blimpEvery: [55, 85],
   blimpTtl: 14,
   blimpRevenueSecs: 40,

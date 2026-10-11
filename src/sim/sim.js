@@ -77,7 +77,7 @@ export function createSim(content) {
       combo: 0,
       lastFixT: -1e9,
       nextId: 1,
-      incidentTimer: 5,
+      incidentTimer: B.firstIncidentAt,
       boss: null,
       bossesStarted: [],
       bossesWon: [],
@@ -485,7 +485,8 @@ export function createSim(content) {
     const d = derived(s);
     const reduce = tpl.tier >= 2 ? upgradeSum(s, 'clickReduce') : 0;
     const clicks = Math.max(1, B.incidentClicks[tpl.tier] - reduce);
-    const time = B.incidentTime[tpl.tier] * d.incidentTimeMult;
+    const early = 1 + B.earlyTimeBonus * Math.max(0, 1 - s.cap / B.earlyUntilCap);
+    const time = B.incidentTime[tpl.tier] * d.incidentTimeMult * early;
     const inc = {
       id: s.nextId++,
       templateId,

@@ -3,7 +3,7 @@
 
 import { h } from './dom.js';
 
-const SPEED = 90; // px per second
+const SPEED = 62; // px per second: slow enough to read the jokes
 
 export class Ticker {
   constructor(root, content) {

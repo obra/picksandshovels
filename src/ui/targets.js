@@ -184,11 +184,18 @@ export class Targets {
     }
   }
 
-  // Floating text at a screen point (or above a world site).
+  // Floating text at a screen point (or above a world site). Quips are jokes,
+  // so they get a speech bubble and time to be read, and only two at once.
   floater(text, x, y, cls = '') {
+    const quip = cls === 'quip';
     const el = h(`div.floater${cls ? `.${cls}` : ''}`, { style: { left: `${x}px`, top: `${y}px` } }, text);
+    if (quip) {
+      this.quips = (this.quips || []).filter((q) => q.isConnected);
+      while (this.quips.length >= 2) this.quips.shift().remove();
+      this.quips.push(el);
+    }
     this.root.append(el);
-    setTimeout(() => el.remove(), 1400);
+    setTimeout(() => el.remove(), quip ? 3800 : 1900);
   }
 
   floaterAt(at, text, cls) {

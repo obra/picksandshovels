@@ -280,6 +280,14 @@ describe('incidents', () => {
     expect(s.combo).toBe(1);
   });
 
+  it('give early-game players extra time to read them', () => {
+    const s = newGame();
+    const early = sim.spawnIncident(s, 'ducks');
+    setCap(s, B.earlyUntilCap + 5);
+    const later = sim.spawnIncident(s, 'ducks');
+    expect(early.max).toBeCloseTo(later.max * (1 + B.earlyTimeBonus), 6);
+  });
+
   it('need one fewer click on big incidents after RLHF', () => {
     const s = newGame();
     s.upgrades.rlhf = true;
@@ -293,7 +301,7 @@ describe('incidents', () => {
     s.hype = 50;
     const inc = sim.spawnIncident(s, 'lab');
     sim.drainFx(s);
-    run(s, B.incidentTime[3] + 1);
+    run(s, inc.max + 1);
     expect(s.incidents.find((i) => i.id === inc.id)).toBeUndefined();
     expect(s.doom).toBeGreaterThan(20 + B.incidentFailDoom[3] - 1);
     const failed = fxOf(s, 'incidentFailed');
