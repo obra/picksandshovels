@@ -13,6 +13,7 @@ const FX_ICONS = [
   ['revSecs', 'coin'],
   ['cashMult', 'coin'],
   ['buff', 'clock'],
+  ['stance', 'brain'],
 ];
 const BUFF_NAMES = { capRate: 'TRAINING', alignRate: 'SAFETY RESEARCH', hypeDecay: 'HYPE DECAY', incidentRate: 'INCIDENTS', revenue: 'REVENUE' };
 const BUFF_UP_GOOD = { capRate: false, alignRate: true, hypeDecay: false, incidentRate: false, revenue: true };
@@ -40,17 +41,20 @@ export class Cards {
     return !!this.el;
   }
 
-  show(event, labName) {
+  // tokens: { leader, rival } lab names, filled into {leader} and {rival}.
+  show(event, labName, tokens = {}) {
     this.mode = 'choose';
     this.event = event;
     this.options = event.options;
+    this.fill = (t) => String(t).replaceAll('{leader}', tokens.leader ?? 'the leading lab').replaceAll('{rival}', tokens.rival ?? 'its rival');
+    const fill = this.fill;
     const opts = h('div.opts');
     event.options.forEach((opt, i) => {
       const fx = h('span.fx');
       for (const [k, ic] of FX_ICONS) if (opt.effects && opt.effects[k] !== undefined) fx.append(icon(ic));
-      opts.append(h('button.btn.opt', { onclick: () => this.choose(i) }, h('span', {}, h('span.k', {}, `${i + 1}`), opt.label), fx));
+      opts.append(h('button.btn.opt', { onclick: () => this.choose(i) }, h('span', {}, h('span.k', {}, `${i + 1}`), fill(opt.label)), fx));
     });
-    this.card = h('div.panel.card', {}, h('div.head', {}, h('div.t', {}, event.title.toUpperCase()), h('div.src', {}, labName ? `RE: ${labName.toUpperCase()}` : 'MEMO')), h('div.body', {}, event.body), opts);
+    this.card = h('div.panel.card', {}, h('div.head', {}, h('div.t', {}, fill(event.title).toUpperCase()), h('div.src', {}, labName ? `RE: ${labName.toUpperCase()}` : 'MEMO')), h('div.body', {}, fill(event.body)), opts);
     this.el = h('div.modal', {}, this.card);
     this.root.append(this.el);
   }
@@ -74,7 +78,8 @@ export class Cards {
     if (Math.abs(cashDelta) >= 0.001) chip(`${cashDelta > 0 ? '+' : '-'}${money(Math.abs(cashDelta))}`, cashDelta > 0);
     if (e.buff) chip(`${BUFF_NAMES[e.buff.stat] || e.buff.stat} ×${e.buff.mult} FOR ${e.buff.secs}s`, (e.buff.mult > 1) === BUFF_UP_GOOD[e.buff.stat]);
     const opts = this.card.querySelector('.opts');
-    opts.replaceWith(h('div.result', {}, h('div', {}, h('b', {}, `"${opt.label}" `)), opt.result, chips.childElementCount ? chips : null));
+    if (e.stance) chip(`${e.stance.stance === 'embargo' ? 'EMBARGO' : e.stance.stance === 'favored' ? 'FAVOR' : 'NORMAL'}: ${(this.stanceName || '').toUpperCase()}`, e.stance.stance === 'embargo' ? e.stance.target === 'reckless' : e.stance.target !== 'reckless');
+    opts.replaceWith(h('div.result', {}, h('div', {}, h('b', {}, `"${this.fill(opt.label)}" `)), this.fill(opt.result), chips.childElementCount ? chips : null));
     this.card.append(h('div.foot', {}, h('button.btn', { onclick: () => this.close() }, 'CONTINUE >')));
   }
 

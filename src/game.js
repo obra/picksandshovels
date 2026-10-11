@@ -271,6 +271,8 @@ export class Game {
   chooseCard(i) {
     const before = this.state.cash;
     const ev = CONTENT.events.find((e) => e.id === this.state.card?.id);
+    const stance = ev?.options[i]?.effects?.stance;
+    this.cards.stanceName = stance ? CONTENT.labs[this.sim.labTarget(this.state, stance.target)]?.name : '';
     if (!this.sim.chooseCard(this.state, i)) return;
     audio.sfx('choose');
     this.cards.showResult(ev.options[i], this.state.cash - before);
@@ -331,11 +333,15 @@ export class Game {
   }
 
   openCard() {
-    const ev = CONTENT.events.find((e) => e.id === this.state.card.id);
-    const lab = CONTENT.labs[Math.abs(hashString(ev.id)) % CONTENT.labs.length];
+    const s = this.state;
+    const ev = CONTENT.events.find((e) => e.id === s.card.id);
+    const name = (target) => CONTENT.labs[this.sim.labTarget(s, target)]?.name;
+    const tokens = { leader: name('leader'), rival: name('rival') };
+    const mentions = /\{leader\}|\{rival\}/.test(ev.title + ev.body);
+    const lab = mentions ? { name: tokens.leader } : CONTENT.labs[Math.abs(hashString(ev.id)) % CONTENT.labs.length];
     audio.sfx('card');
     audio.duck(9999);
-    this.cards.show(ev, lab.name);
+    this.cards.show(ev, lab.name, tokens);
   }
 
   // ── sim events → audio, visuals, UI ─────────────────────
