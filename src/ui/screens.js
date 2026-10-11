@@ -118,7 +118,7 @@ export function pauseScreen(root, { onResume, onRestart, onQuit }) {
       { style: { width: 'min(440px, 94vw)' } },
       h('h2', { style: { fontFamily: 'var(--display)', fontSize: '20px' } }, 'PAUSED'),
       h('div.premise', {}, 'The singularity will wait for you. (It will not wait for you.)'),
-      h('div.title-buttons', {}, h('button.btn.big', { onclick: onResume }, 'RESUME'), h('button.btn.big.ghost', { onclick: onRestart }, 'RESTART'), h('button.btn.big.ghost', { onclick: onQuit }, 'TITLE')),
+      h('div.title-buttons', {}, h('button.btn.big', { onclick: onResume }, 'RESUME'), h('button.btn.big.ghost', { onclick: onRestart }, 'RESTART'), h('button.btn.big.ghost', { onclick: onQuit }, 'SAVE & QUIT')),
     ),
   );
   return () => el.remove();
@@ -219,7 +219,7 @@ function trailScreen(root, { E, date, state, newAchievements, discovered, onAgai
     ),
     newAchievements.length ? h('div.new-ach', {}, ...newAchievements.map((id) => h('span.chip.good', {}, ACHIEVEMENT_BY_ID[id]?.name || id))) : null,
     sharePanel(shareCard, shareLine, sharing),
-    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'TRY THE TRAIL AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'TITLE')),
+    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'TRY THE TRAIL AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'MAIN MENU')),
   );
   const el = modal(root, card);
   el.classList.add('soft');
@@ -273,7 +273,7 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
       : null,
     h('div', { style: { fontFamily: 'var(--display)', fontSize: '9px', marginTop: '8px' } }, `ENDINGS DISCOVERED ${discovered}/${ENDING_IDS.length}`),
     sharePanel(shareCard, shareLine, sharing),
-    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'PLAY AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'TITLE')),
+    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'PLAY AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'MAIN MENU')),
   );
   const el = modal(root, card);
   el.classList.add('soft');
