@@ -97,12 +97,22 @@ export function generateMap() {
     }
   }
 
+  // Picks & Shovels Inc. itself: an 1849 general store on the plot nearest
+  // the middle of town. Never bulldozed, even by its owner.
+  const mid = GRID / 2;
+  const hq = plots.reduce((a, b) => (Math.hypot(b.x - mid - 1, b.z - mid - 1) < Math.hypot(a.x - mid - 1, a.z - mid - 1) ? b : a));
+
   // Pre-built neighborhood: about a third of the plots start as homes and shops.
   let homesProtected = 0;
   let shopsProtected = 0;
   for (const p of plots) {
     p.filler = null;
     p.protected = false;
+    if (p === hq) {
+      p.filler = 'hq';
+      p.protected = true;
+      continue;
+    }
     if (hash01(p.id, 7) < 0.36) {
       p.filler = hash01(p.id, 11) < 0.5 ? 'home' : 'shop';
       if (p.filler === 'home' && homesProtected < 3) {

@@ -35,6 +35,14 @@ describe('city map', () => {
     expect(empty.length).toBeGreaterThanOrEqual(25);
   });
 
+  it('reserves one protected plot near the center for the Picks & Shovels HQ', () => {
+    const hq = map.plots.filter((p) => p.filler === 'hq');
+    expect(hq.length).toBe(1);
+    expect(hq[0].protected).toBe(true);
+    expect(Math.abs(hq[0].x - 15)).toBeLessThanOrEqual(2);
+    expect(Math.abs(hq[0].z - 15)).toBeLessThanOrEqual(2);
+  });
+
   it('has water at the cut corners, roads between land blocks, and a beach ring', () => {
     expect(tileKind(map, 4, 4)).toBe('water'); // block (0,0) is water
     expect(tileKind(map, 12, 10)).toBe('road');

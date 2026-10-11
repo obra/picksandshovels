@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PICKS &amp; SHOVELS: audio test bench</title>
+    <!--
+      Manual test page for src/audio/audio.js. Run `npx vite` and open
+      /audio-test.html. Any click unlocks audio. `window.audio`,
+      `window.SFX_NAMES` and `window.MUSIC_MODES` are exposed for console tests.
+    -->
+    <style>
+      body {
+        margin: 24px;
+        background: #1b1f3a;
+        color: #f4f1de;
+        font: 14px/1.5 ui-monospace, Menlo, monospace;
+      }
+      h1 { font-size: 18px; }
+      h2 { margin: 0 0 8px; font-size: 14px; color: #f2a541; }
+      section { margin-bottom: 18px; padding: 12px; border: 2px solid #3d4270; }
+      button {
+        margin: 3px;
+        padding: 6px 10px;
+        border: 2px solid #000;
+        background: #f2a541;
+        color: #000;
+        font: inherit;
+        cursor: pointer;
+      }
+      button.active { background: #3ddc97; }
+      input[type='number'] { width: 4em; }
+      #status { margin: 0; padding: 8px; background: #000; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>PICKS &amp; SHOVELS: audio test bench</h1>
+    <p>Any click unlocks audio. Every control also calls <code>audio.unlock()</code> first.</p>
+
+    <section>
+      <h2>SFX</h2>
+      <label>pitch offset <input id="pitch" type="number" value="0" step="1" /></label>
+      <label><input id="climb" type="checkbox" checked /> climb a semitone per repeat within 1s</label>
+      <div id="sfx"></div>
+      <button id="stress">stress: 40 hits over 1s</button>
+      <button id="everything">play every SFX in turn</button>
+      <span id="now-playing"></span>
+    </section>
+
+    <section>
+      <h2>Music</h2>
+      <div id="modes"></div>
+      <label>
+        intensity (p(doom)/100)
+        <input id="intensity" type="range" min="0" max="1" step="0.01" value="0" />
+        <span id="intensity-value">0.00</span>
+      </label>
+      <button id="duck">duck 2s</button>
+    </section>
+
+    <section>
+      <h2>Mix</h2>
+      <label><input id="mute" type="checkbox" /> muted (saved as localStorage ps.muted)</label>
+      <label>volume <input id="volume" type="range" min="0" max="1" step="0.01" /></label>
+    </section>
+
+    <pre id="status"></pre>
+
+    <script type="module">
+      import { audio } from './src/audio/audio.js';
+
+      // The names the design asks for, listed here rather than read from the
+      // module so a missing sound shows up as a warning instead of a missing button.
+      const SFX_NAMES = [
+        'click', 'hit', 'resolve', 'fail', 'buy', 'coin', 'build', 'alarm', 'release',
+        'card', 'choose', 'boss', 'bossHit', 'bossDefeat', 'tweet', 'pause', 'redButton',
+        'blimp', 'achievement', 'error', 'heartbeat', 'glitch', 'roll', 'doomEnd',
+        'winterEnd', 'goodEnd',
+      ];
+      const MUSIC_MODES = ['title', 'play', 'boss', 'doom', 'winter', 'good', 'off'];
+      const LONG_SOUNDS = new Set(['release', 'bossDefeat', 'redButton', 'doomEnd', 'winterEnd', 'goodEnd']);
+
+      Object.assign(window, { audio, SFX_NAMES, MUSIC_MODES });
+
+      const $ = (id) => document.getElementById(id);
+      document.addEventListener('click', () => audio.unlock());
+      document.addEventListener('keydown', () => audio.unlock());
+
+      const climbs = new Map(); // name → { step, at }
+      function play(name) {
+        audio.unlock();
+        let pitch = Number($('pitch').value) || 0;
+        if ($('climb').checked) {
+          const prev = climbs.get(name);
+          const now = performance.now();
+          const step = prev && now - prev.at < 1000 ? Math.min(prev.step + 1, 12) : 0;
+          climbs.set(name, { step, at: now });
+          pitch += step;
+        }
+        audio.sfx(name, { pitch });
+      }
+
+      for (const name of SFX_NAMES) {
+        const button = document.createElement('button');
+        button.textContent = name;
+        button.addEventListener('click', () => play(name));
+        $('sfx').append(button);
+      }
+
+      $('stress').addEventListener('click', () => {
+        audio.unlock();
+        let count = 0;
+        const timer = setInterval(() => {
+          audio.sfx('hit', { pitch: count % 12 });
+          count += 1;
+          if (count >= 40) clearInterval(timer);
+        }, 25);
+      });
+
+      $('everything').addEventListener('click', async () => {
+        audio.unlock();
+        for (const name of SFX_NAMES) {
+          $('now-playing').textContent = name;
+          audio.sfx(name);
+          await new Promise((resolve) => setTimeout(resolve, LONG_SOUNDS.has(name) ? 3000 : 800));
+        }
+        $('now-playing').textContent = '';
+      });
+
+      const modeButtons = MUSIC_MODES.map((mode) => {
+        const button = document.createElement('button');
+        button.textContent = mode;
+        button.addEventListener('click', () => {
+          audio.unlock();
+          audio.music(mode);
+          for (const other of modeButtons) other.classList.toggle('active', other === button);
+        });
+        $('modes').append(button);
+        return button;
+      });
+
+      $('intensity').addEventListener('input', () => {
+        const value = Number($('intensity').value);
+        audio.setIntensity(value);
+        $('intensity-value').textContent = value.toFixed(2);
+      });
+
+      $('duck').addEventListener('click', () => {
+        audio.unlock();
+        audio.duck(2);
+      });
+
+      $('mute').checked = audio.isMuted();
+      $('mute').addEventListener('change', () => {
+        audio.unlock();
+        audio.setMuted($('mute').checked);
+      });
+
+      $('volume').value = audio.debugState().volume;
+      $('volume').addEventListener('input', () => audio.setVolume(Number($('volume').value)));
+
+      setInterval(() => {
+        $('status').textContent = JSON.stringify(audio.debugState(), null, 1);
+      }, 200);
+    </script>
+  </body>
+</html>
