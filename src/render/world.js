@@ -56,6 +56,46 @@ export class World {
       return vb.build();
     })();
     this.tumbleMat = voxelMaterial();
+
+    // The frontier crown floats over whichever lab leads.
+    const cvb = new VoxelBuilder();
+    cvb.box(-0.5, 0, -0.5, 0.5, 0.25, 0.5, P.yellow, { emit: 2, bottom: true });
+    for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4], [0, -0.45], [0, 0.45], [-0.45, 0], [0.45, 0]]) {
+      cvb.box(x - 0.08, 0.25, z - 0.08, x + 0.08, 0.55, z + 0.08, P.yellow, { emit: 2 });
+    }
+    cvb.box(-0.12, 0.08, 0.5, 0.12, 0.2, 0.52, P.red, { emit: 2 });
+    cvb.box(0.5, 0.08, -0.12, 0.52, 0.2, 0.12, P.cyan, { emit: 2 });
+    this.crown = new THREE.Mesh(cvb.build(), voxelMaterial());
+    this.crown.visible = false;
+    this.stage.scene.add(this.crown);
+    this.labExhaust = map.labs.map(() => 0);
+  }
+
+  // Lab exhaust (token burn) and the frontier crown.
+  updateLabs(dt, state, derived) {
+    if (!derived) {
+      this.crown.visible = false;
+      return;
+    }
+    const labs = this.content.labs;
+    this.map.labs.forEach((l, i) => {
+      const share = derived.labShares[i] ?? 0;
+      this.labExhaust[i] += dt * (0.4 + share * 10);
+      const top = this.city.labMeshes[i].top;
+      const color = new THREE.Color(labs[i].color).getHex();
+      while (this.labExhaust[i] >= 1) {
+        this.labExhaust[i] -= 1;
+        this.fx.smoke(l.x + OFFSET + (Math.random() - 0.5), Math.min(top, 3.6), l.z + OFFSET + (Math.random() - 0.5), color, 0.8 + share * 2);
+      }
+    });
+    const leader = derived.leader;
+    const hq = this.map.labs[leader];
+    this.crown.visible = !!hq;
+    if (hq) {
+      const top = this.city.labMeshes[leader].top;
+      this.crown.position.set(hq.x + OFFSET, Math.min(top, 3.6) + 0.9 + Math.sin(this.time * 2) * 0.12, hq.z + OFFSET);
+      this.crown.rotation.y = this.time * 1.2;
+    }
   }
 
   // Rebuild everything from a state without construction animations (new game / load).
@@ -84,7 +124,7 @@ export class World {
     return this.stage.project(v.x, v.y, v.z, out);
   }
 
-  update(dt, state, { title = false } = {}) {
+  update(dt, state, { title = false, derived = null } = {}) {
     this.time += dt;
     U.uTime.value = this.time;
     const t = title ? this.time * 0.5 + 10 : state.t;
@@ -125,6 +165,7 @@ export class World {
     }
     this.burning = this.burning.filter((b) => b.left > 0);
 
+    this.updateLabs(dt, state, title || this.ending ? null : derived);
     this.updateEnding(dt, state);
     this.life.update(dt, this.time, state && !title ? state.blimp : null);
     this.city.update(dt);

@@ -36,3 +36,16 @@ export function pct(x) {
 export function rate(perSec) {
   return `${money(perSec)}/s`;
 }
+
+const BIG = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+
+// Plain big-number formatting: 1.2K, 3.4T, ...
+export function big(n) {
+  let v = Math.abs(n);
+  let i = 0;
+  while (v >= 1000 && i < BIG.length - 1) {
+    v /= 1000;
+    i++;
+  }
+  return `${n < 0 ? '-' : ''}${v < 10 && i > 0 ? v.toFixed(1) : Math.round(v)}${BIG[i]}`;
+}

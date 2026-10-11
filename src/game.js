@@ -71,6 +71,9 @@ export class Game {
       sim: this.sim,
       onBuy: (id, el, first) => this.buy(id, el, first),
       onBuyUpgrade: (id, el) => this.buyUpgrade(id, el),
+      onLabStance: (id, stance) => {
+        if (this.mode === 'play' && this.sim.setLabStance(this.state, id, stance)) audio.sfx('click');
+      },
     });
     this.abilities = new Abilities(this.ui, { onUse: (kind) => this.useAbility(kind) });
     this.ticker = new Ticker(this.ui, CONTENT);
@@ -277,10 +280,11 @@ export class Game {
     for (const f of this.sim.drainFx(s)) this.onFx(f);
     if (this.mode === 'play' && s.phase === 'card' && !this.cards.open) this.openCard();
 
-    this.world.update(dt, s, { title: this.mode === 'title' });
+    const derived = this.mode === 'title' ? null : this.sim.derived(s);
+    this.world.update(dt, s, { title: this.mode === 'title', derived });
 
     if (this.uiBuilt && (this.mode === 'play' || this.mode === 'paused')) {
-      const d = this.sim.derived(s);
+      const d = derived;
       this.hud.update(s, d, this.sim);
       this.shop.update(s);
       this.abilities.update(s);
@@ -404,6 +408,10 @@ export class Game {
       }
       case 'error':
         audio.sfx('error');
+        break;
+      case 'labStance':
+        if (f.stance === 'embargo') this.ticker.breaking(`Picks & Shovels embargoes ${f.lab}; ${f.lab} calls it "a growth opportunity"`);
+        if (f.stance === 'favored') this.ticker.breaking(`Picks & Shovels names ${f.lab} a preferred customer; rivals demand to speak to a manager`);
         break;
       case 'ending':
         this.endRun(f.ending);
