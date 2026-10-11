@@ -33,7 +33,10 @@ was a probability the whole time.
 | Capability vs Alignment | 0–100 | capability 100 → singularity roll | capability: lab base rate plus compute. Alignment: safety buildings, resolved incidents |
 
 Two resources: **Cash** and **Compute**. Labs buy compute automatically, so
-revenue = compute × price × hype multiplier.
+revenue = compute × price × hype multiplier. Hype decays faster over time and
+when you're irrelevant, meaning your compute is a small share of the
+industry's. Hype gains shrink the same way, so pure safety play ends in an AI
+winter.
 
 ## Core loop (what the player does every few seconds)
 
@@ -65,6 +68,43 @@ revenue = compute × price × hype multiplier.
    - 75, PAPERCLIP MAXIMIZER: a factory converts plots into paperclip
      piles. Clear the piles and smash the core.
 
+### Labs, the frontier, and open weights
+
+- **Eight customer labs** buy your GPUs: ClosedAI, Anthropomorphic, DeepMined,
+  Llama Ranch, X-Æ-A-I, Mistrial, Instability AI and Confusion AI. Each lab
+  trains on its share of your compute plus its own, and has its own
+  capability (log10 of its cumulative training compute), token burn and
+  latest model. The **frontier is the leading lab's capability.**
+- The leader's **recklessness** (0–1) scales gap-driven doom, from ×0.84 for
+  careful labs to ×1.36 for X-Æ-A-I. Reckless labs also have more incidents.
+- In the **LABS tab** you can **favor** a lab (×3 market share) or
+  **embargo** it (no GPUs; −2 hype; −4% revenue, because they paid a
+  premium). Embargoing everyone means selling nothing.
+- **Releases** come from the lab that crosses each 10-capability line.
+  Releases from **open-weights customers** (Llama Ranch, Mistrial) also leak:
+  incidents spike and the doom floor rises.
+- **Flops:** a release can bomb. The chance is 10% + 15% × recklessness − 1.2%
+  per Evals Lab, with a minimum of 4%. A flop costs hype, rolls the lab back
+  1.5 capability, and pays no launch bonus.
+- **Overseas open weights.** Four overseas labs (DeepSeep, Qwerty, Moonshine,
+  MaxiMin) are not customers and can't be embargoed. After each frontier
+  release from the second on, one of them, never the same one twice
+  running, drops open weights 35–55s later. Each drop does three things:
+  - hype −10, plus GPU demand ×0.7 and incidents ×1.6 for 30s
+  - doom +3, and the doom floor rises +1 for good
+  - a response card (export controls, price war, distillation fight,
+    emergency summit) and a cargo ship that sails into the bay and leaks
+    glowing weights into town
+
+### Incident kinds and combos
+
+Incidents are tagged gaffe, escape, cyber, finance, bio, swarm, rsi or
+misalignment. The tag shows on the bubble, decides how the incident fails
+visually, and steers which doom ending a missed incident feeds (escape and
+swarm → replication, misalignment → shoggoth, rsi → paperclips, finance →
+engagement). Fixing incidents within 3.5s of each other chains a **combo**:
+from ×3 on, each fix pays a little cash and hype.
+
 ### Eras (by capability)
 
 0 Chatbot Era · 20 Copilot Era · 40 Agent Era · 60 AGI-ish Era · 80 "Superintelligence Imminent"
@@ -79,6 +119,10 @@ Each era unlocks buildings, upgrades, incident types and headline pools.
 - **AI Winter** (hype 0).
 - **Survived singularity**: utopia (alignment ≥ 100, low doom), shareholders
   (took the dodgy money: `flags.greed ≥ 3`), or weird (it's fine, mostly).
+- The cause of doom fades with a 150s memory, so the ending reflects what
+  went wrong recently.
+- The doom floor is `0.2 × capability × upgrades + proliferation`, so even a
+  perfect player faces some risk at the roll.
 
 Each ending gets its own in-world animation (paperclip palette, snow, rainbow
 fireworks), an epitaph, stats, achievements, and Share/Play Again buttons.
