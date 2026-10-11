@@ -19,13 +19,15 @@ const BUFF_NAMES = { capRate: 'TRAINING', alignRate: 'SAFETY RESEARCH', hypeDeca
 const BUFF_UP_GOOD = { capRate: false, alignRate: true, hypeDecay: false, incidentRate: false, revenue: true };
 
 export class Cards {
-  constructor(root, { onChoose, onDone }) {
+  constructor(root, { onChoose, onDone, isActive }) {
     this.root = root;
     this.onChoose = onChoose;
     this.onDone = onDone;
+    this.isActive = isActive;
     this.el = null;
     this.keyHandler = (e) => {
-      if (!this.el) return;
+      // Keys belong to the pause screen while the game is paused.
+      if (!this.el || !this.isActive()) return;
       if (this.mode === 'choose' && /^[1-3]$/.test(e.key)) {
         const i = Number(e.key) - 1;
         if (i < this.options.length) this.choose(i);
@@ -88,5 +90,17 @@ export class Cards {
     this.el = null;
     this.mode = null;
     this.onDone();
+  }
+
+  // Throws away any card without side effects (new run, back to title).
+  reset() {
+    this.el?.remove();
+    this.el = null;
+    this.mode = null;
+  }
+
+  // The sim refused the choice (the card went stale): let the player try again.
+  unstick() {
+    if (this.mode === 'pending') this.mode = 'choose';
   }
 }

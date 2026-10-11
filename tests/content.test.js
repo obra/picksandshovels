@@ -318,9 +318,10 @@ describe('endings', () => {
     'utopia',
     'shareholders',
     'weird',
+    'dysentery',
   ];
 
-  it('has exactly the ten endings the sim can reach', () => {
+  it('has exactly the eleven endings the sim can reach', () => {
     expect(Object.keys(ENDINGS).sort()).toEqual([...KEYS].sort());
   });
 

@@ -117,12 +117,21 @@ Each era unlocks buildings, upgrades, incident types and headline pools.
   the dominant cause: paperclips, shoggoth, replication, engagement,
   sycophancy, or generic.
 - **AI Winter** (hype 0).
+- **Societal collapse** (hype 0 while p(doom) ≥ 50): "You Have Died Of
+  Dysentery", in Oregon Trail style. A covered wagon heads west through the
+  burning city, and the tombstone reads "pepperoni and cheese".
 - **Survived singularity**: utopia (alignment ≥ 100, low doom), shareholders
   (took the dodgy money: `flags.greed ≥ 3`), or weird (it's fine, mostly).
 - The cause of doom fades with a 150s memory, so the ending reflects what
   went wrong recently.
 - The doom floor is `0.2 × capability × upgrades + proliferation`, so even a
   perfect player faces some risk at the roll.
+
+**Share card.** Every ending renders a 1200×630 PNG of the city in its ending
+state, overlaid with the ending title, a rubber stamp, the roll or outcome
+line, a few stats, and picksandshovels.org. On phones it goes through the
+native share sheet. On desktop it's copied to the clipboard, with a download
+fallback and a prefilled tweet.
 
 Each ending gets its own in-world animation (paperclip palette, snow, rainbow
 fireworks), an epitaph, stats, achievements, and Share/Play Again buttons.

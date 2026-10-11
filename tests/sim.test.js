@@ -214,6 +214,16 @@ describe('hype', () => {
     expect(s.ending.type).toBe('winter');
   });
 
+  it('collapses society instead when the bubble pops with p(doom) already high', () => {
+    const s = newGame();
+    s.owned.rack = 0;
+    s.hype = 0.5;
+    s.doom = B.collapseDoom + 5;
+    run(s, 30);
+    expect(s.phase).toBe('over');
+    expect(s.ending.type).toBe('collapse');
+  });
+
   it('vague-tweeting adds hype, then cools down', () => {
     const s = newGame();
     s.hype = 40;
@@ -515,7 +525,7 @@ describe('decision cards', () => {
     s.cardTimer = 0.05;
     sim.tick(s, 0.1);
     expect(s.phase).toBe('card');
-    expect(['money', 'buffy']).toContain(s.card.id);
+    expect(['late', 'overseas-response']).not.toContain(s.card.id);
     const t = s.t;
     run(s, 5);
     expect(s.t).toBe(t);
@@ -551,6 +561,14 @@ describe('decision cards', () => {
     sim.openCard(s, 'exclusive');
     sim.chooseCard(s, 1);
     expect(s.labs[0].stance).toBe('embargo');
+  });
+
+  it('opening your own weights spreads them for good', () => {
+    const s = newGame();
+    sim.openCard(s, 'open-up');
+    sim.chooseCard(s, 0);
+    expect(s.flags.openWeights).toBe(1);
+    expect(s.proliferation).toBeCloseTo(B.openRelease.floorAdd, 6);
   });
 
   it('timed buffs multiply their stat, then wear off', () => {
@@ -666,6 +684,27 @@ describe('the singularity', () => {
 });
 
 describe('saving', () => {
+  it('loads saves from older versions by filling in what they lack', () => {
+    const a = sim.newGame(9);
+    runPlaying(a, 30);
+    const old = JSON.parse(sim.serialize(a));
+    delete old.overseas;
+    delete old.proliferation;
+    delete old.labs;
+    delete old.combo;
+    delete old.stats.flops;
+    old.card = { id: 'card-that-no-longer-exists' };
+    old.phase = 'card';
+    const b = sim.deserialize(JSON.stringify(old));
+    expect(b.phase).toBe('play');
+    expect(b.card).toBe(null);
+    expect(b.overseas).toEqual({ pending: null, drops: 0, byLab: {}, last: null });
+    expect(b.labs.length).toBe(fixtureContent.labs.length);
+    b.overseas.pending = { in: 0.01 };
+    expect(() => runPlaying(b, 60)).not.toThrow();
+    expect(b.overseas.drops).toBe(1);
+  });
+
   it('round-trips through JSON and replays identically', () => {
     const a = sim.newGame(7);
     runPlaying(a, 45);

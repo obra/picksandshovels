@@ -85,6 +85,18 @@ const SPRITES = {
 };
 const SPRITE_COLORS = { '#': '#d8dee8', w: '#c68d55', k: '#22232b' };
 
+// Draws a sprite onto a 2D canvas at an integer scale (for the share card).
+export function drawSprite(ctx, name, x, y, scale) {
+  SPRITES[name].forEach((row, yy) => {
+    for (let xx = 0; xx < row.length; xx++) {
+      const c = SPRITE_COLORS[row[xx]];
+      if (!c) continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(x + xx * scale, y + yy * scale, scale, scale);
+    }
+  });
+}
+
 export function sprite(name, cls = '') {
   const rows = SPRITES[name];
   let rects = '';

@@ -86,6 +86,30 @@ export class World {
     }
     svb.box(-0.25, 0.46, -0.36, 0.71, 0.76, 0.36, P.weights, { emit: 2 });
     svb.panel('+z', 0.36, -0.1, 0.52, 0.56, 0.7, P.white, 2);
+    // A covered wagon and two oxen, for when everything has collapsed and it's
+    // time to go west.
+    const wvb = new VoxelBuilder();
+    wvb.box(-0.32, 0.1, -0.14, 0.32, 0.2, 0.14, 0x8a5a33);
+    for (const x of [-0.22, 0.22]) for (const z of [-0.16, 0.16]) wvb.box(x - 0.09, 0, z - 0.02, x + 0.09, 0.18, z + 0.02, 0x4a2a1a);
+    for (let i = 0; i < 5; i++) {
+      const t = i / 4;
+      const y = 0.2 + Math.sin(t * Math.PI) * 0.16;
+      wvb.box(-0.3, 0.2, -0.15 + t * 0.3 - 0.035, 0.3, y + 0.06, -0.15 + t * 0.3 + 0.035, 0xf3f0e8, { side: 0xe0dccf });
+    }
+    wvb.box(0.32, 0.12, -0.02, 0.6, 0.14, 0.02, 0x6a4028); // tongue
+    for (const z of [-0.08, 0.08]) {
+      wvb.box(0.52, 0.06, z - 0.05, 0.74, 0.17, z + 0.05, 0x9a6a3d); // ox
+      wvb.box(0.72, 0.1, z - 0.035, 0.8, 0.18, z + 0.035, 0x9a6a3d);
+      wvb.box(0.76, 0.18, z - 0.06, 0.78, 0.2, z + 0.06, P.offwhite); // horns
+      for (const dx of [0.54, 0.7]) wvb.box(dx, 0, z - 0.03, dx + 0.02, 0.06, z + 0.03, 0x6a4028);
+    }
+    wvb.box(0.24, 0.2, -0.03, 0.3, 0.32, 0.03, 0x3f7ff2); // the CEO, driving
+    wvb.box(0.24, 0.32, -0.025, 0.29, 0.37, 0.025, P.peach);
+    wvb.box(0.23, 0.37, -0.04, 0.3, 0.39, 0.04, 0x7a5030);
+    this.wagon = new THREE.Mesh(wvb.build(), voxelMaterial());
+    this.wagon.visible = false;
+    this.stage.scene.add(this.wagon);
+
     this.ship = new THREE.Mesh(svb.build(), voxelMaterial());
     this.ship.visible = false;
     this.stage.scene.add(this.ship);
@@ -141,12 +165,12 @@ export class World {
       this.crown.visible = false;
       return;
     }
-    const labs = this.content.labs;
+    this.labColors ||= this.content.labs.map((l) => new THREE.Color(l.color).getHex());
     this.map.labs.forEach((l, i) => {
       const share = derived.labShares[i] ?? 0;
       this.labExhaust[i] += dt * (0.4 + share * 10);
       const top = this.city.labMeshes[i].top;
-      const color = new THREE.Color(labs[i].color).getHex();
+      const color = this.labColors[i];
       while (this.labExhaust[i] >= 1) {
         this.labExhaust[i] -= 1;
         this.fx.smoke(l.x + OFFSET + (Math.random() - 0.5), Math.min(top, 3.6), l.z + OFFSET + (Math.random() - 0.5), color, 0.8 + share * 2);
@@ -176,6 +200,7 @@ export class World {
     this.life.panic = 0;
     this.shipT = -1;
     this.ship.visible = false;
+    this.wagon.visible = false;
     this.city.sync(state, false);
     this.stage.attract = false;
     this.stage.snapYaw();
@@ -198,7 +223,7 @@ export class World {
     const phase = (t / DAY_SECONDS + 0.12) % 1;
     U.uDay.value = dayCurve(phase);
 
-    const doomTarget = this.ending?.type === 'doom' ? 1 : (state?.doom ?? 0) / 100;
+    const doomTarget = this.ending?.type === 'doom' || this.ending?.type === 'collapse' ? 1 : (state?.doom ?? 0) / 100;
     this.doomShown = approach(this.doomShown, doomTarget, 2, dt);
     U.uDoom.value = this.doomShown;
     U.uFlash.value = Math.max(0, U.uFlash.value - dt * 3);
@@ -447,6 +472,15 @@ export class World {
     } else if (ending.type === 'winter') {
       this.life.frozen = true;
       this.endingBillboard = 'FOR LEASE';
+    } else if (ending.type === 'collapse') {
+      this.life.frozen = true;
+      this.endingBillboard = 'GO WEST';
+      this.wagon.visible = true;
+      this.wagonX = 29;
+      // Fires everywhere: the city is not coming back this time.
+      state.plots.forEach((p, i) => {
+        if (i % 3 === 0) this.burning.push({ at: { kind: 'plot', id: p.id }, left: 999, acc: Math.random() });
+      });
     } else {
       this.endingBillboard = { utopia: 'THANK YOU', shareholders: '$$$$$$', weird: 'HELLO :)' }[ending.flavor] || 'THANK YOU';
     }
@@ -464,6 +498,15 @@ export class World {
     if (e.type === 'doom') {
       if (e.cause === 'paperclips') U.uClip.value = k;
       if (Math.random() < dt * 2) this.fx.burst((Math.random() - 0.5) * 24, 0.3, (Math.random() - 0.5) * 24, [P.red, P.orange, P.ink], 10, 2);
+    } else if (e.type === 'collapse') {
+      U.uWinter.value = k * 0.35;
+      U.uDoom.value = Math.max(U.uDoom.value, 0.8 * k);
+      if (Math.random() < dt * 3) this.fx.burst((Math.random() - 0.5) * 24, 0.4, (Math.random() - 0.5) * 24, [P.orange, P.red, P.yellow], 8, 1.5);
+      // The wagon heads west along the bridge road, at an ox's pace.
+      this.wagonX -= dt * 0.55;
+      if (this.wagonX < -1) this.wagonX = 29;
+      this.wagon.position.set(this.wagonX + OFFSET, 0.05 + Math.abs(Math.sin(this.time * 4)) * 0.01, 12.72 + OFFSET);
+      this.wagon.rotation.y = Math.PI;
     } else if (e.type === 'winter') {
       U.uWinter.value = k;
       for (let i = 0; i < 3; i++) if (Math.random() < dt * 30) this.fx.snow(0, 0, 34);

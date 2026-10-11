@@ -5,11 +5,12 @@ export function endingId(ending) {
   if (!ending) return null;
   if (ending.type === 'doom') return ending.cause;
   if (ending.type === 'winter') return 'winter';
+  if (ending.type === 'collapse') return 'dysentery';
   return ending.flavor;
 }
 
 export const ENDING_IDS = [
-  'utopia', 'shareholders', 'weird', 'winter',
+  'utopia', 'shareholders', 'weird', 'winter', 'dysentery',
   'paperclips', 'shoggoth', 'replication', 'engagement', 'sycophancy', 'generic',
 ];
 
@@ -33,8 +34,10 @@ export const ACHIEVEMENTS = [
   { id: 'big-red', name: 'Did You Try Turning It Off', desc: 'Press the Big Red Button.', check: (s) => s.stats.redButtons >= 1 },
   { id: 'vagueposter', name: 'Vagueposter', desc: 'Vague-tweet 20 times in one run.', check: (s) => s.stats.tweets >= 20 },
   { id: 'fiduciary', name: 'Fiduciary Duty', desc: 'Take the dodgy money three times in one run.', check: (s) => (s.flags.greed || 0) >= 3 },
-  { id: 'prepper', name: 'Prepper', desc: 'Buy the bunker in New Zealand.', check: (s) => !!s.upgrades.bunker },
-  { id: 'signatory', name: 'Signatory', desc: 'Get the International AI Treaty signed.', check: (s) => !!s.upgrades.treaty },
+  { id: 'prepper', name: 'Prepper', desc: 'Get yourself a bunker.', check: (s) => !!s.upgrades.bunker || (s.flags.bunker || 0) > 0 },
+  { id: 'signatory', name: 'Signatory', desc: 'Get an AI treaty signed.', check: (s) => !!s.upgrades.treaty || (s.flags.treaty || 0) > 0 },
+  { id: 'yolo', name: 'YOLO', desc: 'Take the YOLO option three times in one run.', check: (s) => (s.flags.yolo || 0) >= 3 },
+  { id: 'open-source', name: 'Information Wants To Be Free', desc: 'Open-source something you probably should not have.', check: (s) => (s.flags.openWeights || 0) > 0 },
   { id: 'gentrifier', name: 'Gentrification', desc: 'Bulldoze ten homes and shops for compute.', check: (s) => s.stats.demolished >= 10 },
   { id: 'survived', name: 'Survived the Singularity', desc: 'Roll above p(doom) when capability hits 100.', check: (s, e) => e?.type === 'survive' },
   { id: 'lucky', name: 'Natural 100', desc: 'Survive the singularity with p(doom) at 50% or more.', check: (s, e) => e?.type === 'survive' && e.doomAtRoll >= 50 },
@@ -43,6 +46,7 @@ export const ACHIEVEMENTS = [
   { id: 'brink', name: 'Brinkmanship', desc: 'Survive after p(doom) peaked at 90% or more.', check: (s, e) => e?.type === 'survive' && s.stats.peakDoom >= 90 },
   { id: 'ending-utopia', name: 'Fully Automated Luxury', desc: 'Reach the good ending.', check: (s, e) => endingId(e) === 'utopia' },
   { id: 'ending-winter', name: 'Ghost Town', desc: 'Let the hype hit zero.', check: (s, e) => endingId(e) === 'winter' },
+  { id: 'ending-dysentery', name: 'You Have Died Of Dysentery', desc: 'Let the bubble pop while the world is already falling apart.', check: (s, e) => e?.type === 'collapse' },
   { id: 'ending-doom', name: 'We Tried', desc: 'End the world. Any way will do.', check: (s, e) => e?.type === 'doom' },
 ];
 

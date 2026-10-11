@@ -117,4 +117,15 @@ export const ENDINGS = {
     ],
     stamp: 'SURVIVED?',
   },
+  dysentery: {
+    title: 'Died Of Dysentery',
+    subtitle: 'The bubble popped while the world was already on fire.',
+    epitaph: [
+      'The AI winter hit with p(doom) already climbing. Markets froze, then supply chains, then the water plant.',
+      'You loaded a wagon with GPUs, a barrel of flour and a pallet of energy drinks, and headed west.',
+      'You forded the river. You should have caulked the wagon and floated it.',
+      'Here lies the CEO of Picks & Shovels Inc. They sold shovels. In the end, they needed one.',
+    ],
+    stamp: 'DYSENTERY',
+  },
 };

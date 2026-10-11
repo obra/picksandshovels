@@ -5,7 +5,8 @@
 // game page's console call `await ps.captureOgImage()` (see src/game.js),
 // which renders a 1200x630 card and POSTs it here.
 //
-//   node scripts/og-receiver.mjs            listen on :5199, write public/og.png, exit
+//   node scripts/og-receiver.mjs                  listen on :5199, write public/og.png, exit
+//   node scripts/og-receiver.mjs --out card.png   write somewhere else (e.g. to inspect a share card)
 //   node scripts/og-receiver.mjs --help
 
 import http from 'node:http';
@@ -14,11 +15,12 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 if (process.argv.includes('--help')) {
-  console.log('usage: og-receiver.mjs  (listens on :5199, writes public/og.png from one POST, then exits)');
+  console.log('usage: og-receiver.mjs [--out file.png]  (listens on :5199, writes public/og.png or --out from one POST, then exits)');
   process.exit(0);
 }
 
-const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'og.png');
+const outArg = process.argv.indexOf('--out');
+const out = outArg > 0 ? process.argv[outArg + 1] : join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'og.png');
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'content-type');

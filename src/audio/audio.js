@@ -9,6 +9,7 @@
  *   audio.music(mode)           'title' | 'play' | 'boss' | 'doom' | 'winter' | 'good' | 'off'
  *   audio.setIntensity(x)       p(doom)/100 during play
  *   audio.duck(seconds)         briefly lowers the music
+ *   audio.unduck()              brings it back now
  *   audio.setMuted(b), audio.isMuted(), audio.setVolume(x)
  *
  * Browsers refuse to start audio before a user gesture, so nothing sounds
@@ -1373,6 +1374,17 @@ export const audio = {
     gain.linearRampToValueAtTime(DUCK_LEVEL, now + 0.08);
     gain.setValueAtTime(DUCK_LEVEL, duckUntil);
     gain.linearRampToValueAtTime(1, duckUntil + 0.5);
+  },
+
+  /** Ends any duck now (for holds like duck(9999) during a card or pause). */
+  unduck() {
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    duckUntil = 0;
+    const gain = duckGain.gain;
+    gain.cancelScheduledValues(now);
+    gain.setValueAtTime(gain.value, now);
+    gain.linearRampToValueAtTime(1, now + 0.3);
   },
 
   /** A snapshot of the engine's state, for test pages and debugging. */

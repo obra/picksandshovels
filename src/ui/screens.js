@@ -7,7 +7,7 @@ import { money } from './format.js';
 import { ENDING_IDS, ACHIEVEMENTS, ACHIEVEMENT_BY_ID } from '../content/achievements.js';
 
 const ENDING_SHORT = {
-  utopia: 'UTOPIA', shareholders: 'SHARE-\nHOLDERS', weird: 'WEIRD', winter: 'GHOST\nTOWN',
+  utopia: 'UTOPIA', shareholders: 'SHARE-\nHOLDERS', weird: 'WEIRD', winter: 'GHOST\nTOWN', dysentery: 'DYSEN-\nTERY',
   paperclips: 'PAPER-\nCLIPS', shoggoth: 'SHOGGOTH', replication: 'COPIES', engagement: 'ENGAGED', sycophancy: 'FLATTERED', generic: 'DOOM',
 };
 const GOOD_ENDINGS = new Set(['utopia', 'shareholders', 'weird']);
@@ -167,7 +167,74 @@ function stat(k, v) {
   return h('div.stat', {}, h('div.k', {}, k), h('div.v', {}, v));
 }
 
-export function endingScreen(root, { content, ending, endingKey, state, sim, newAchievements, discovered, onAgain, onTitle, onShare }) {
+// The share card preview and its buttons. card is a Promise<Blob>.
+function sharePanel(card, shareLine, { onShareImage, onDownload, onTweet }) {
+  const img = h('img.share-preview', { alt: 'Your PICKS & SHOVELS ending card' });
+  const status = h('div.share-status', {}, 'Printing your card...');
+  let blob = null;
+  card.then((b) => {
+    blob = b;
+    img.src = URL.createObjectURL(b);
+    status.textContent = 'Your card. Post it. Make them play.';
+  });
+  const act = (fn) => async (e) => {
+    if (!blob) return;
+    const btn = e.currentTarget;
+    const msg = await fn(blob, shareLine);
+    if (msg) btn.textContent = msg;
+  };
+  return h(
+    'div.share',
+    {},
+    img,
+    status,
+    h(
+      'div.share-buttons',
+      {},
+      h('button.btn.blue', { onclick: act(onShareImage) }, 'SHARE IMAGE'),
+      h('button.btn.ghost', { onclick: act(onDownload) }, 'DOWNLOAD'),
+      h('button.btn.ghost.tweet-btn', { onclick: act((b, line) => onTweet(line)) }, icon('bird'), 'TWEET IT'),
+    ),
+  );
+}
+
+// Societal collapse gets the Oregon Trail treatment.
+function trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, shareLine, shareCard, sharing }) {
+  const lines = h('div.trail-lines');
+  const card = h(
+    'div.panel.screen.trail',
+    {},
+    h('div.trail-head', {}, 'YOU HAVE DIED OF DYSENTERY.'),
+    h(
+      'div.tomb',
+      {},
+      h('div.stone', {}, h('div', {}, 'HERE LIES'), h('div', {}, 'THE CEO OF'), h('div', {}, 'PICKS &'), h('div', {}, 'SHOVELS INC.'), h('div.yr', {}, `1849 - ${date.year}`), h('div.pep', {}, 'PEPPERONI AND CHEESE')),
+      h('div.dirt'),
+    ),
+    lines,
+    h(
+      'div.trail-stats',
+      {},
+      `FINAL P(DOOM) ${Math.round(state.doom)}%  ·  PEAK CASH ${money(state.stats.peakCash)}  ·  MODELS SHIPPED ${state.releases}  ·  ENDINGS ${discovered}/${ENDING_IDS.length}`,
+    ),
+    newAchievements.length ? h('div.new-ach', {}, ...newAchievements.map((id) => h('span.chip.good', {}, ACHIEVEMENT_BY_ID[id]?.name || id))) : null,
+    sharePanel(shareCard, shareLine, sharing),
+    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'TRY THE TRAIL AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'TITLE')),
+  );
+  const el = modal(root, card);
+  el.classList.add('soft');
+  let i = 0;
+  const all = [E.subtitle, ...E.epitaph];
+  const next = () => {
+    if (i >= all.length || !el.isConnected) return;
+    lines.append(h('p', {}, all[i++]));
+    setTimeout(next, 900);
+  };
+  setTimeout(next, 900);
+  return () => el.remove();
+}
+
+export function endingScreen(root, { content, ending, endingKey, state, sim, newAchievements, discovered, onAgain, onTitle, shareCard, sharing }) {
   const E = content.endings[endingKey] || content.endings.generic;
   const good = ending.type === 'survive';
   const date = sim.date(state);
@@ -179,7 +246,10 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
     ? `I survived the AI singularity with p(doom) at ${ending.doomAtRoll}%.`
     : ending.type === 'winter'
       ? `I let the AI hype hit zero and got fired in ${date.year}. The Valley is a ghost town.`
-      : `I ended the world (${E.title}) in ${date.year} Q${date.quarter}.`;
+      : ending.type === 'collapse'
+        ? `The AI bubble popped, society collapsed, and I died of dysentery in ${date.year}.`
+        : `I ended the world (${E.title}) in ${date.year} Q${date.quarter}.`;
+  if (ending.type === 'collapse') return trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, shareLine, shareCard, sharing });
   const card = h(
     'div.panel.screen.ending',
     {},
@@ -202,19 +272,8 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
       ? h('div', {}, h('div', { style: { fontFamily: 'var(--display)', fontSize: '9px', margin: '6px 0' } }, 'NEW ACHIEVEMENTS'), h('div.new-ach', {}, ...newAchievements.map((id) => h('span.chip.good', { title: ACHIEVEMENT_BY_ID[id]?.desc }, ACHIEVEMENT_BY_ID[id]?.name || id))))
       : null,
     h('div', { style: { fontFamily: 'var(--display)', fontSize: '9px', marginTop: '8px' } }, `ENDINGS DISCOVERED ${discovered}/${ENDING_IDS.length}`),
-    h(
-      'div.title-buttons',
-      {},
-      h('button.btn.big', { onclick: onAgain }, 'PLAY AGAIN'),
-      h('button.btn.big.blue', {
-        onclick: async (e) => {
-          const btn = e.currentTarget;
-          const msg = await onShare(shareLine);
-          if (msg) btn.textContent = msg;
-        },
-      }, 'SHARE'),
-      h('button.btn.big.ghost', { onclick: onTitle }, 'TITLE'),
-    ),
+    sharePanel(shareCard, shareLine, sharing),
+    h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'PLAY AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'TITLE')),
   );
   const el = modal(root, card);
   el.classList.add('soft');

@@ -55,6 +55,10 @@ export const fixtureContent = {
       ],
     },
     {
+      id: 'open-up', title: 'Open it', body: 'b', once: true,
+      options: [{ label: 'Release the weights', effects: { flag: 'openWeights' }, result: 'r' }, { label: 'No', effects: {}, result: 'r' }],
+    },
+    {
       id: 'late', title: 'Late', body: 'b', minCap: 80,
       options: [{ label: 'x', effects: {}, result: 'r' }, { label: 'y', effects: {}, result: 'r' }],
     },

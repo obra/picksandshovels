@@ -18,6 +18,12 @@ export class Ticker {
     this.stockPrices = Object.fromEntries((content.flavor.TICKER_SYMBOLS || []).map((t) => [t.sym, 100 + Math.random() * 400]));
   }
 
+  clear() {
+    this.queue = [];
+    this.current = null;
+    this.track.replaceChildren();
+  }
+
   breaking(text) {
     if (!text) return;
     this.queue.unshift({ text, breaking: true });

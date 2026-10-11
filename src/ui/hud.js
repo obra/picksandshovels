@@ -92,6 +92,9 @@ export class Hud {
     } else if (gap < -8) {
       note = 'Alignment is ahead: p(doom) easing';
       cls = 'good';
+    } else if (s.hype < 20 && s.doom >= B.collapseDoom) {
+      note = 'Hype is running out with the world on fire: SOCIETAL COLLAPSE ahead';
+      cls = 'bad';
     } else if (s.hype < 20) {
       note = 'Hype is running out: AI WINTER is coming';
       cls = 'bad';

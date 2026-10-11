@@ -133,9 +133,34 @@ export function createSim(content) {
     return JSON.stringify({ ...s, fx: [] });
   }
 
+  // Loads a save, filling in anything an older version didn't have yet, and
+  // dropping references to content that has since been removed.
   function deserialize(str) {
     const s = JSON.parse(str);
+    const fresh = newGame(s.seed || 1);
+    for (const [k, v] of Object.entries(fresh)) {
+      if (s[k] === undefined) s[k] = v;
+      else if (v && typeof v === 'object' && !Array.isArray(v) && s[k] && typeof s[k] === 'object') {
+        for (const [kk, vv] of Object.entries(v)) if (s[k][kk] === undefined) s[k][kk] = vv;
+      }
+    }
+    if (!Array.isArray(s.labs) || s.labs.length !== content.labs.length) {
+      // Saves from before labs had their own capability: put the frontier back
+      // where it was, led by the first lab.
+      const old = Array.isArray(s.labs) ? s.labs : [];
+      s.labs = fresh.labs.map((l, i) => old.find((o) => o.id === l.id) || l);
+      if (!old.length) {
+        const lead = cumFromPoints(Math.max(0, s.cap - (s.capBonus || 0)), B.labC0);
+        s.labs.forEach((l, i) => (l.cumTrain = i === 0 ? lead : lead * 0.5));
+      }
+    }
+    if (s.card && !EVENT[s.card.id]) {
+      s.card = null;
+      if (s.phase === 'card') s.phase = 'play';
+    }
+    s.incidents = (s.incidents || []).filter((i) => INCIDENT[i.templateId]);
     s.fx = [];
+    recomputeMeters(s);
     return s;
   }
 
@@ -886,6 +911,8 @@ export function createSim(content) {
       emit(s, 'buff', { ...fx.buff });
     }
     if (fx.flag) s.flags[fx.flag] = (s.flags[fx.flag] || 0) + 1;
+    // Releasing weights yourself proliferates them like any other open release.
+    if (fx.flag === 'openWeights') s.proliferation = (s.proliferation || 0) + B.openRelease.floorAdd;
     if (fx.stance) {
       const i = labTarget(s, fx.stance.target);
       if (i >= 0) setLabStance(s, content.labs[i].id, fx.stance.stance);
@@ -945,7 +972,7 @@ export function createSim(content) {
   function checkEnd(s) {
     if (s.phase === 'over') return;
     if (s.doom >= 100) return finish(s, { type: 'doom', cause: dominantCause(s) });
-    if (s.hype <= 0) return finish(s, { type: 'winter' });
+    if (s.hype <= 0) return finish(s, { type: s.doom >= B.collapseDoom ? 'collapse' : 'winter' });
     if (s.cap >= 100) {
       const final = pick(s, content.releases[9] || [{ name: 'The Last Model', tagline: '' }]);
       s.lastModel = final.name;

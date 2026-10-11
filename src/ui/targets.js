@@ -43,9 +43,7 @@ export class Targets {
   }
 
   update(s) {
-    const stage = this.world.stage;
-    const W = stage.width;
-    const H = stage.height;
+    this.frameNo = (this.frameNo || 0) + 1;
 
     // Incidents.
     const alive = new Set();
@@ -79,30 +77,12 @@ export class Targets {
       this.world.sitePoint(inc.at, this.v);
       const p = this.world.project(this.v, this.p);
       this.place(t.el, p.x, p.y - 4);
-      // Off-screen? Point an arrow at it from the screen edge.
-      const off = p.x < 20 || p.x > W - 20 || p.y < 60 || p.y > H - 40;
-      let arrow = this.arrows.get(inc.id);
-      if (off) {
-        if (!arrow) {
-          arrow = h('div.offscreen', { onpointerdown: (e) => { e.stopPropagation(); this.world.stage.focus(this.v.x, this.v.z); } }, '!');
-          this.root.append(arrow);
-          this.arrows.set(inc.id, arrow);
-        }
-        const ax = Math.max(24, Math.min(W - 24, p.x));
-        const ay = Math.max(170, Math.min(H - 60, p.y));
-        setStyle(arrow, 'left', `${ax}px`);
-        setStyle(arrow, 'top', `${ay}px`);
-      } else if (arrow) {
-        arrow.remove();
-        this.arrows.delete(inc.id);
-      }
+      this.edgeArrow(`i${inc.id}`, p, '!');
     }
     for (const [id, t] of this.incidents) {
       if (!alive.has(id)) {
         t.el.remove();
         this.incidents.delete(id);
-        this.arrows.get(id)?.remove();
-        this.arrows.delete(id);
       }
     }
 
@@ -136,8 +116,10 @@ export class Targets {
         this.world.bosses.partPoint(boss, part, this.v);
         const p = this.world.project(this.v, this.p);
         this.place(t.el, p.x, p.y);
+        if (!(part.kind === 'tentacle' && part.hp <= 0)) this.edgeArrow(key, p, '!');
       }
     }
+    this.pruneArrows();
     for (const [key, t] of this.parts) {
       if (!partsAlive.has(key)) {
         t.el.remove();
@@ -160,6 +142,45 @@ export class Targets {
     } else if (this.blimpEl) {
       this.blimpEl.remove();
       this.blimpEl = null;
+    }
+  }
+
+  // An arrow on the screen edge pointing at something off-screen. Clicking it
+  // pans there. Arrows not refreshed this frame are removed by pruneArrows.
+  edgeArrow(key, p, label) {
+    const stage = this.world.stage;
+    const W = stage.width;
+    const H = stage.height;
+    const off = p.x < 20 || p.x > W - 20 || p.y < 60 || p.y > H - 40;
+    let arrow = this.arrows.get(key);
+    if (!off) {
+      if (arrow) {
+        arrow.remove();
+        this.arrows.delete(key);
+      }
+      return;
+    }
+    if (!arrow) {
+      arrow = h('div.offscreen', {}, label);
+      arrow.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        stage.focus(arrow.target.x, arrow.target.z);
+      });
+      this.root.append(arrow);
+      this.arrows.set(key, arrow);
+    }
+    arrow.target = { x: this.v.x, z: this.v.z };
+    arrow.seen = this.frameNo;
+    setStyle(arrow, 'left', `${Math.max(24, Math.min(W - 24, p.x))}px`);
+    setStyle(arrow, 'top', `${Math.max(170, Math.min(H - 60, p.y))}px`);
+  }
+
+  pruneArrows() {
+    for (const [key, arrow] of this.arrows) {
+      if (arrow.seen !== this.frameNo) {
+        arrow.remove();
+        this.arrows.delete(key);
+      }
     }
   }
 

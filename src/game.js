@@ -20,6 +20,7 @@ import { titleScreen, howToScreen, pauseScreen, rollScreen, endingScreen } from 
 import { loadMeta, saveMeta, loadGame, saveGame, clearGame } from './ui/storage.js';
 import { money } from './ui/format.js';
 import { h } from './ui/dom.js';
+import { renderShareCard } from './ui/sharecard.js';
 
 const ERA_BLURBS = [
   '',
@@ -89,7 +90,8 @@ export class Game {
     });
     this.cards = new Cards(this.ui, {
       onChoose: (i) => this.chooseCard(i),
-      onDone: () => audio.duck(0),
+      onDone: () => audio.unduck(),
+      isActive: () => this.mode === 'play',
     });
     this.updateInsets();
     window.addEventListener('resize', () => this.updateInsets());
@@ -115,8 +117,13 @@ export class Game {
     const frame = (now) => {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      this.frame(dt, now);
+      // Keep the loop alive whatever happens; one bad frame must not freeze the game.
       requestAnimationFrame(frame);
+      try {
+        this.frame(dt, now);
+      } catch (err) {
+        console.error('frame failed', err);
+      }
     };
     requestAnimationFrame(frame);
   }
@@ -130,8 +137,13 @@ export class Game {
       this.targets.clear();
       this.notify.clear();
     }
+    this.cards?.reset();
+    this.tutorial?.hide();
+    this.ticker?.clear();
     this.updateInsets();
-    this.world.reset(this.sim.newGame(12345));
+    // The title gets a fresh, untroubled city (no leftover doom tint).
+    this.state = this.sim.newGame(12345);
+    this.world.reset(this.state);
     this.world.stage.attract = true;
     audio.music('title');
     this.closeScreen = titleScreen(this.ui, {
@@ -166,6 +178,8 @@ export class Game {
     this.state = state;
     this.buildPlayUI();
     this.setPlayUIVisible(true);
+    this.cards.reset();
+    this.ticker.clear();
     this.targets.clear();
     this.notify.clear();
     this.world.reset(state);
@@ -232,7 +246,8 @@ export class Game {
     } else if (this.mode === 'paused') {
       this.closePause?.();
       this.mode = 'play';
-      audio.duck(0);
+      if (this.cards?.open) audio.duck(9999);
+      else audio.unduck();
     }
   }
 
@@ -273,7 +288,10 @@ export class Game {
     const ev = CONTENT.events.find((e) => e.id === this.state.card?.id);
     const stance = ev?.options[i]?.effects?.stance;
     this.cards.stanceName = stance ? CONTENT.labs[this.sim.labTarget(this.state, stance.target)]?.name : '';
-    if (!this.sim.chooseCard(this.state, i)) return;
+    if (!this.sim.chooseCard(this.state, i)) {
+      this.cards.unstick();
+      return;
+    }
     audio.sfx('choose');
     this.cards.showResult(ev.options[i], this.state.cash - before);
   }
@@ -335,6 +353,7 @@ export class Game {
   openCard() {
     const s = this.state;
     const ev = CONTENT.events.find((e) => e.id === s.card.id);
+    if (!ev) return;
     const name = (target) => CONTENT.labs[this.sim.labTarget(s, target)]?.name;
     const tokens = { leader: name('leader'), rival: name('rival') };
     const mentions = /\{leader\}|\{rival\}/.test(ev.title + ev.body);
@@ -512,12 +531,14 @@ export class Game {
     const current = () => this.runId === runId;
     const showEnding = () => {
       if (!current()) return;
-      const music = ending.type === 'survive' ? 'good' : ending.type === 'winter' ? 'winter' : 'doom';
+      const music = ending.type === 'survive' ? 'good' : ending.type === 'winter' || ending.type === 'collapse' ? 'winter' : 'doom';
       audio.sfx(ending.type === 'survive' ? 'goodEnd' : ending.type === 'winter' ? 'winterEnd' : 'doomEnd');
       audio.music(music);
       setTimeout(() => {
         if (!current()) return;
         this.setPlayUIVisible(false);
+        const E = CONTENT.endings[key] || CONTENT.endings.generic;
+        const shareCard = renderShareCard({ world: this.world, state: this.state, ending, E, date: this.sim.date(this.state) });
         this.closeScreen = endingScreen(this.ui, {
           content: CONTENT,
           ending,
@@ -528,7 +549,12 @@ export class Game {
           discovered: ENDING_IDS.filter((id) => this.meta.endings[id]).length,
           onAgain: () => this.newGame(),
           onTitle: () => this.showTitle(),
-          onShare: (line) => this.share(line),
+          shareCard,
+          sharing: {
+            onShareImage: (blob, line) => this.shareImage(blob, line),
+            onDownload: (blob) => this.downloadImage(blob),
+            onTweet: (line) => this.tweet(line),
+          },
         });
       }, 4200);
     };
@@ -588,20 +614,49 @@ export class Game {
     return data.length;
   }
 
-  async share(line) {
-    const text = `${line} Sell the GPUs. Keep p(doom) under 100%. https://picksandshovels.org`;
+  shareText(line) {
+    return `${line} Sell the GPUs. Keep p(doom) under 100%. https://picksandshovels.org`;
+  }
+
+  // Phones: the native share sheet with the image attached. Desktop: copy the
+  // image to the clipboard, falling back to a download.
+  async shareImage(blob, line) {
+    const file = new File([blob], 'picks-and-shovels.png', { type: 'image/png' });
     try {
-      if (navigator.share) {
-        await navigator.share({ title: 'PICKS & SHOVELS', text });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text: this.shareText(line), title: 'PICKS & SHOVELS' });
         return 'SHARED!';
       }
-      await navigator.clipboard.writeText(text);
-      return 'COPIED!';
+    } catch (err) {
+      if (err?.name === 'AbortError') return null;
+    }
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      return 'IMAGE COPIED!';
     } catch {
-      // Share sheet dismissed or clipboard blocked.
-      return null;
+      this.downloadImage(blob);
+      return 'DOWNLOADED!';
     }
   }
+
+  downloadImage(blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'picks-and-shovels.png';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    return 'SAVED!';
+  }
+
+  // Opens a prefilled tweet. Players attach the card they just copied or saved.
+  tweet(line) {
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(this.shareText(line))}`;
+    window.open(url, '_blank', 'noopener');
+    return 'TWEETING...';
+  }
+
 }
 
 function hashString(str) {

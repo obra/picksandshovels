@@ -21,6 +21,7 @@ const tmpQ = new THREE.Quaternion();
 const tmpS = new THREE.Vector3();
 const tmpV = new THREE.Vector3();
 const tmpC = new THREE.Color();
+const tmpScale = new THREE.Vector3();
 
 function shoggothBody() {
   const vb = new VoxelBuilder();
@@ -242,7 +243,7 @@ export class Bosses {
         pz = base.z + Math.sin(ang) * reach * k + Math.sin(ang + Math.PI / 2) * wig;
         py = base.y + Math.sin(k * Math.PI * 0.9) * 2.2 * scale * ease + 0.2;
         const size = (0.42 - k * 0.28) * scale;
-        tmpM.compose(tmpS.set(px, py, pz), tmpQ.identity(), new THREE.Vector3(size, size, size));
+        tmpM.compose(tmpS.set(px, py, pz), tmpQ.identity(), tmpScale.set(size, size, size));
         this.segments.setMatrixAt(t * SEGMENTS + s, tmpM);
       }
       this.tips[t] = (this.tips[t] || new THREE.Vector3()).set(px, py + 0.15, pz);

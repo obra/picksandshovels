@@ -38,6 +38,10 @@ export const B = {
   doomPerActiveTier: 0.012, // per second per tier of open incident
   doomCauseMemory: 150, // seconds; older causes fade when picking the ending
 
+  // Hype hitting zero while p(doom) is at least this high is not an AI winter.
+  // It's societal collapse, and the ending is pure Oregon Trail.
+  collapseDoom: 50,
+
   // Hype
   hypeDecayBase: 0.1,
   hypeDecayPerHype: 0.0026,

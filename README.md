@@ -17,7 +17,8 @@ reaches 100, the singularity rolls a d100 against your p(doom).
 - **Labs tab:** favor or embargo the labs you sell to. The lab at the frontier sets the pace, and its recklessness sets how fast doom climbs.
 - **Abilities:** `1` vague-tweet, `2` pause training, `3` Big Red Button.
 - **Camera:** drag to pan, scroll or pinch to zoom, `Q`/`E` to rotate. `P` pauses, `M` mutes.
-- **Endings:** ten of them. Find them all.
+- **Endings:** eleven of them, including dying of dysentery if the bubble pops while the world is already on fire. Find them all.
+- **Share:** every ending prints a share card of your city as it ended. Share it, save it, or tweet it.
 
 ## Developing
 

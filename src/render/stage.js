@@ -96,6 +96,7 @@ export class Stage {
         const [a, b] = [...pointers.values()];
         const dist = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinchStart > 0) this.setZoom(pinchZoom * (dist / pinchStart));
+        drag = null; // a pinch is not a drag
         return;
       }
       if (!drag) return;
@@ -109,6 +110,12 @@ export class Stage {
     const end = (e) => {
       pointers.delete(e.pointerId);
       if (pointers.size === 0) drag = null;
+      // Lifting one finger of a pinch: carry on dragging from where the other one is.
+      if (pointers.size === 1) {
+        const [p] = [...pointers.values()];
+        drag = { x: p.x, y: p.y, moved: 0 };
+        pinchStart = 0;
+      }
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
