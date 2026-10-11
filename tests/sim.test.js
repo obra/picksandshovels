@@ -541,6 +541,18 @@ describe('decision cards', () => {
     }
   });
 
+  it('can change your stance toward the leading or the most reckless lab', () => {
+    const s = newGame();
+    s.labs[1].cumTrain = cumFromPoints(5, B.labC0);
+    run(s, 0.1);
+    sim.openCard(s, 'exclusive');
+    sim.chooseCard(s, 0);
+    expect(s.labs[1].stance).toBe('favored');
+    sim.openCard(s, 'exclusive');
+    sim.chooseCard(s, 1);
+    expect(s.labs[0].stance).toBe('embargo');
+  });
+
   it('timed buffs multiply their stat, then wear off', () => {
     const s = newGame();
     const base = sim.derived(s).revenue;

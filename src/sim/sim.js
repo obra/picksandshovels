@@ -886,7 +886,22 @@ export function createSim(content) {
       emit(s, 'buff', { ...fx.buff });
     }
     if (fx.flag) s.flags[fx.flag] = (s.flags[fx.flag] || 0) + 1;
+    if (fx.stance) {
+      const i = labTarget(s, fx.stance.target);
+      if (i >= 0) setLabStance(s, content.labs[i].id, fx.stance.stance);
+    }
     recomputeMeters(s);
+  }
+
+  // Which lab a card means by 'leader', 'rival', 'reckless' or 'careful'.
+  function labTarget(s, target) {
+    const byCap = s.labs.map((l, i) => i).sort((a, b) => s.labs[b].cap - s.labs[a].cap);
+    const byReck = s.labs.map((l, i) => i).sort((a, b) => (content.labs[b].reckless ?? 0.5) - (content.labs[a].reckless ?? 0.5));
+    if (target === 'leader') return byCap[0];
+    if (target === 'rival') return byCap[1] ?? -1;
+    if (target === 'reckless') return byReck[0];
+    if (target === 'careful') return byReck[byReck.length - 1];
+    return -1;
   }
 
   function chooseCard(s, optionIndex) {
@@ -1065,6 +1080,7 @@ export function createSim(content) {
     survivalFlavor,
     setLabStance,
     flopChance,
+    labTarget,
     content,
   };
 }

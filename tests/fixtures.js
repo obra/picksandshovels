@@ -48,6 +48,13 @@ export const fixtureContent = {
       ],
     },
     {
+      id: 'exclusive', title: '{leader} wants an exclusive', body: 'b', once: true,
+      options: [
+        { label: 'Sign it', effects: { stance: { target: 'leader', stance: 'favored' } }, result: 'r' },
+        { label: 'Embargo the YOLO lab', effects: { stance: { target: 'reckless', stance: 'embargo' } }, result: 'r' },
+      ],
+    },
+    {
       id: 'late', title: 'Late', body: 'b', minCap: 80,
       options: [{ label: 'x', effects: {}, result: 'r' }, { label: 'y', effects: {}, result: 'r' }],
     },
