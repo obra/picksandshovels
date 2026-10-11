@@ -60,6 +60,10 @@ export const B = {
   incidentFixDoom: [0, 0.25, 0.5, 1],
   incidentFixAlign: [0, 0.05, 0.12, 0.25],
   incidentFixHype: [0, 0.25, 0.5, 1],
+  comboWindow: 3.5, // seconds between fixes to keep a combo going
+  comboRevenueSecs: 2, // per combo step past two
+  comboMinCash: 5,
+  comboHype: 0.4,
   internAutoPerSec: 0.012,
   internAutoMax: 0.35,
 

@@ -72,6 +72,8 @@ export function createSim(content) {
       })),
       plots: MAP.plots.map((p) => ({ id: p.id, filler: p.filler, protected: p.protected, bId: null, level: 0 })),
       incidents: [],
+      combo: 0,
+      lastFixT: -1e9,
       nextId: 1,
       incidentTimer: 5,
       boss: null,
@@ -110,7 +112,7 @@ export function createSim(content) {
         peakCash: B.start.cash,
         peakDoom: B.start.doom,
         minHype: B.start.hype,
-        clickStreakBest: 0,
+        comboBest: 0,
       },
       ending: null,
       fx: [],
@@ -497,7 +499,19 @@ export function createSim(content) {
     addHype(s, B.incidentFixHype[inc.tier] * scale);
     recomputeMeters(s);
     if (auto) s.stats.incidentsAuto++;
-    else s.stats.incidentsResolved++;
+    else {
+      s.stats.incidentsResolved++;
+      // Quick successive fixes chain into a combo that pays out from the third.
+      s.combo = s.t - s.lastFixT <= B.comboWindow ? s.combo + 1 : 1;
+      s.lastFixT = s.t;
+      s.stats.comboBest = Math.max(s.stats.comboBest, s.combo);
+      if (s.combo >= 3) {
+        const cash = derived(s).revenue * B.comboRevenueSecs * (s.combo - 2) + B.comboMinCash;
+        addCash(s, cash);
+        addHype(s, B.comboHype);
+        emit(s, 'combo', { combo: s.combo, cash, at: inc.at });
+      }
+    }
     emit(s, 'incidentResolved', {
       id: inc.id,
       at: inc.at,

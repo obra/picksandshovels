@@ -19,6 +19,7 @@ export const ACHIEVEMENTS = [
   { id: 'first-fix', name: 'Incident Response', desc: 'Resolve your first incident.', check: (s) => s.stats.incidentsResolved >= 1 },
   { id: 'whack', name: 'Whack-a-Mole Certified', desc: 'Resolve 50 incidents in one run.', check: (s) => s.stats.incidentsResolved >= 50 },
   { id: 'firefighter', name: 'Professional Firefighter', desc: 'Resolve 150 incidents in one run.', check: (s) => s.stats.incidentsResolved >= 150 },
+  { id: 'combo-10', name: 'Flow State', desc: 'Chain a ×10 incident combo.', check: (s) => (s.stats.comboBest || 0) >= 10 },
   { id: 'eureka', name: 'Eureka!', desc: 'Witness your first model release.', check: (s) => s.releases >= 1 },
   { id: 'ship-it', name: 'Ship It', desc: 'Witness nine model releases in one run.', check: (s) => s.releases >= 9 },
   { id: 'mask-on', name: 'Mask On', desc: 'Put a smiley mask on every tentacle of the Shoggoth.', check: (s) => s.bossesWon.includes('shoggoth') },

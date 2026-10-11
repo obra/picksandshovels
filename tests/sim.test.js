@@ -250,6 +250,25 @@ describe('incidents', () => {
     expect(s.stats.incidentsResolved).toBe(1);
   });
 
+  it('chain into combos when resolved quickly, paying a bonus from the third fix on', () => {
+    const s = newGame();
+    s.hype = 40;
+    for (let i = 0; i < 4; i++) {
+      const inc = sim.spawnIncident(s, 'ducks');
+      sim.clickIncident(s, inc.id);
+      run(s, 1);
+    }
+    expect(s.combo).toBe(4);
+    expect(s.stats.comboBest).toBe(4);
+    const combos = sim.drainFx(s).filter((f) => f.type === 'combo');
+    expect(combos.map((f) => f.combo)).toEqual([3, 4]);
+    expect(combos[1].cash).toBeGreaterThan(0);
+    run(s, B.comboWindow + 0.5);
+    const inc = sim.spawnIncident(s, 'ducks');
+    sim.clickIncident(s, inc.id);
+    expect(s.combo).toBe(1);
+  });
+
   it('need one fewer click on big incidents after RLHF', () => {
     const s = newGame();
     s.upgrades.rlhf = true;

@@ -120,6 +120,7 @@ export class Game {
   }
 
   showTitle() {
+    this.runId = (this.runId || 0) + 1;
     this.mode = 'title';
     this.closeScreen?.();
     if (this.uiBuilt) {
@@ -157,6 +158,7 @@ export class Game {
   }
 
   beginRun(state) {
+    this.runId = (this.runId || 0) + 1;
     this.closeScreen?.();
     this.closeScreen = null;
     this.state = state;
@@ -343,6 +345,10 @@ export class Game {
         audio.sfx('resolve', { pitch: f.tier - 1 });
         this.targets.floaterAt(f.at, f.auto ? 'INTERN FIXED IT' : f.fix || 'FIXED', f.auto ? 'good' : 'quip');
         break;
+      case 'combo':
+        audio.sfx('coin', { pitch: Math.min(12, f.combo - 2) });
+        this.targets.floaterAt(f.at, `COMBO ×${f.combo}! +${money(f.cash)}`, 'gold');
+        break;
       case 'incidentFailed':
         audio.sfx('fail');
         this.targets.floaterAt(f.at, `+${B.incidentFailDoom[f.tier]}% DOOM`, 'bad');
@@ -469,11 +475,16 @@ export class Game {
     }
     saveMeta(this.meta);
 
+    // Delayed steps belong to this run only; a new game or the title cancels them.
+    const runId = this.runId;
+    const current = () => this.runId === runId;
     const showEnding = () => {
+      if (!current()) return;
       const music = ending.type === 'survive' ? 'good' : ending.type === 'winter' ? 'winter' : 'doom';
       audio.sfx(ending.type === 'survive' ? 'goodEnd' : ending.type === 'winter' ? 'winterEnd' : 'doomEnd');
       audio.music(music);
       setTimeout(() => {
+        if (!current()) return;
         this.setPlayUIVisible(false);
         this.closeScreen = endingScreen(this.ui, {
           content: CONTENT,
@@ -493,12 +504,14 @@ export class Game {
     if (ending.singularity) {
       audio.music('off');
       setTimeout(() => {
+        if (!current()) return;
         rollScreen(this.ui, {
           roll: ending.roll,
           doom: ending.doomAtRoll,
           model: ending.model,
           audio,
           onDone: () => {
+            if (!current()) return;
             this.world.startEnding(ending, this.state);
             showEnding();
           },
