@@ -4,7 +4,7 @@
 import { h } from './dom.js';
 import { icon, sprite } from './icons.js';
 import { money } from './format.js';
-import { ENDING_IDS, ACHIEVEMENT_BY_ID } from '../content/achievements.js';
+import { ENDING_IDS, ACHIEVEMENTS, ACHIEVEMENT_BY_ID } from '../content/achievements.js';
 
 const ENDING_SHORT = {
   utopia: 'UTOPIA', shareholders: 'SHARE-\nHOLDERS', weird: 'WEIRD', winter: 'GHOST\nTOWN',
@@ -37,6 +37,7 @@ export function titleScreen(root, { content, meta, hasSave, onNew, onContinue, o
   if (hasSave) buttons.append(h('button.btn.big', { onclick: onContinue }, 'CONTINUE'));
   buttons.append(h(`button.btn.big${hasSave ? '.ghost' : ''}`, { onclick: onNew }, hasSave ? 'NEW GAME' : 'START SELLING'));
   buttons.append(h('button.btn.big.ghost', { onclick: onHowTo }, 'HOW TO PLAY'));
+  buttons.append(h('button.btn.big.ghost', { onclick: () => achievementsScreen(root, meta) }, 'TROPHIES'));
   const el = modal(
     root,
     h(
@@ -85,6 +86,27 @@ export function howToScreen(root, onClose) {
       h('div.title-buttons', {}, h('button.btn.big', { onclick: () => { el.remove(); onClose(); } }, 'GOT IT')),
     ),
   );
+  return el;
+}
+
+export function achievementsScreen(root, meta) {
+  const list = h('div.ach-list');
+  for (const a of ACHIEVEMENTS) {
+    const got = !!meta.achievements[a.id];
+    list.append(h(`div.ach${got ? '.got' : ''}`, {}, h('div.ach-n', {}, got ? a.name : '???'), h('div.ach-d', {}, a.desc)));
+  }
+  const n = ACHIEVEMENTS.filter((a) => meta.achievements[a.id]).length;
+  const el = modal(
+    root,
+    h(
+      'div.panel.screen',
+      {},
+      h('h2', { style: { fontFamily: 'var(--display)', fontSize: '18px' } }, `TROPHY CASE ${n}/${ACHIEVEMENTS.length}`),
+      list,
+      h('div.title-buttons', {}, h('button.btn.big', { onclick: () => el.remove() }, 'BACK')),
+    ),
+  );
+  el.style.zIndex = 20;
   return el;
 }
 

@@ -369,3 +369,10 @@ button { font: inherit; color: inherit; }
 .stance { flex: 1; font-family: var(--display); font-size: 7px; padding: 5px 4px; border: 2px solid var(--ink); background: var(--paper2); cursor: pointer; }
 .stance.favor.on { background: var(--green); color: white; }
 .stance.embargo.on { background: var(--red); color: white; }
+
+.ach-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left; margin: 12px 0; }
+.ach { border: 2px solid var(--ink); padding: 6px 8px; background: var(--paper2); opacity: 0.6; }
+.ach.got { background: var(--gold); opacity: 1; }
+.ach-n { font-family: var(--display); font-size: 8px; margin-bottom: 4px; }
+.ach-d { font-size: 13px; line-height: 1.1; }
+@media (max-width: 860px) { .ach-list { grid-template-columns: 1fr; } }

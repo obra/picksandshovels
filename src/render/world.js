@@ -179,8 +179,10 @@ export class World {
     const flavor = this.content.flavor;
     const forced = this.endingBillboard;
     const ominous = state && state.doom > 70;
+    const release = this.releaseBillboard && this.time < this.releaseBillboard.until ? this.releaseBillboard.text : null;
     this.city.setBillboardTexts(() => {
       if (forced) return forced;
+      if (release && Math.random() < 0.6) return release;
       const pool = ominous ? flavor.BILLBOARDS.ominous : flavor.BILLBOARDS.normal;
       if (Math.random() < 0.35) return null;
       // Glitch: sometimes an ominous one slips through early.
@@ -220,6 +222,9 @@ export class World {
         break;
       }
       case 'release': {
+        // Billboards across town advertise the new model for a while.
+        this.releaseBillboard = { text: `NEW ${f.model}`.slice(0, 18), until: this.time + 25 };
+        this.billboardTimer = 0;
         for (let i = 0; i < 4; i++) {
           setTimeout(() => {
             const lab = this.map.labs[Math.floor(Math.random() * this.map.labs.length)];

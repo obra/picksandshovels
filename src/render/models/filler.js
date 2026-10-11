@@ -63,9 +63,18 @@ export function apartment(vb, seed) {
     vb.box(-s - 0.04, y - 0.02, s, s + 0.04, y, s + 0.06, P.white);
   }
   vb.panel('+z', s, -0.1, 0, 0.1, 0.22, P.ink);
+  if (rnd(seed, 8) < 0.5) tree(vb, 0.7, 0.72, seed, 0.8);
+  if (rnd(seed, 9) < 0.5) {
+    // Rooftop billboard: whatever the Valley is selling today.
+    vb.box(-0.45, h + 0.05, 0.05, -0.41, h + 0.35, 0.09, P.steel);
+    vb.box(0.41, h + 0.05, 0.05, 0.45, h + 0.35, 0.09, P.steel);
+    vb.box(-0.62, h + 0.3, 0.0, 0.62, h + 0.72, 0.05, P.ink);
+    return result(h + 0.8, {
+      signs: [{ text: 'AGI SOON', face: '+z', x: 0, y: h + 0.51, z: 0.05, w: 1.18, fg: '#22232b', bg: '#ffffff', slot: 'billboard' }],
+    });
+  }
   waterTank(vb, -0.3, h + 0.05, -0.3);
   acUnit(vb, 0.3, h + 0.05, 0.2);
-  if (rnd(seed, 8) < 0.5) tree(vb, 0.7, 0.72, seed, 0.8);
   return result(h + 0.4);
 }
 

@@ -64,6 +64,18 @@ export class City {
       return { group: g, top: res.top, lab };
     });
 
+    // A giant billboard greets traffic coming off the bridge.
+    const bb = new VoxelBuilder();
+    const bx = GRID - 1.6;
+    const bz = 9.3;
+    bb.box(bx - 0.06, -0.2, bz + 0.3, bx + 0.06, 1.0, bz + 0.42, P.steel);
+    bb.box(bx - 0.06, -0.2, bz + 1.6, bx + 0.06, 1.0, bz + 1.72, P.steel);
+    bb.box(bx - 0.08, 1.0, bz - 0.2, bx, 2.2, bz + 2.2, P.ink);
+    bb.box(bx - 0.02, 0.95, bz - 0.1, bx + 0.25, 0.99, bz + 2.1, P.steel);
+    for (let i = 0; i < 4; i++) bb.box(bx + 0.18, 0.99, bz + 0.1 + i * 0.6, bx + 0.24, 1.07, bz + 0.18 + i * 0.6, P.yellow, { emit: 2 });
+    this.root.add(new THREE.Mesh(bb.build(), this.material));
+    this.root.add(this.makeSign({ text: 'AGI SOON', face: '+x', x: bx, y: 1.6, z: bz + 1.0, w: 2.3, fg: '#22232b', bg: '#ffd23f', slot: 'billboard' }).mesh);
+
     this.plots = map.plots.map((p) => ({ id: p.id, x: p.x, z: p.z, key: null, group: null, top: 0.5, anim: null, smoke: [] }));
   }
 
