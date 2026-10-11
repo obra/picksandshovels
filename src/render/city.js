@@ -13,6 +13,14 @@ import { Sign } from './signs.js';
 import { P } from './palette.js';
 
 export const OFFSET = -GRID / 2;
+
+// Your HQ upgrades at $1B, $1T and $1Qa of peak cash (cash is in $M).
+export function hqLevelFor(peakCash) {
+  if (peakCash >= 1e9) return 4;
+  if (peakCash >= 1e6) return 3;
+  if (peakCash >= 1e3) return 2;
+  return 1;
+}
 export const DIORAMA_MARGIN = 6;
 
 export class City {
@@ -103,14 +111,16 @@ export class City {
 
   // Bring plot meshes in line with sim state. animate=false for loads.
   sync(state, animate = true) {
+    const hqLevel = hqLevelFor(state.stats.peakCash);
     for (const sp of state.plots) {
       const p = this.plots[sp.id];
-      const key = `${sp.bId || sp.filler || 'empty'}|${sp.level}`;
+      const level = sp.filler === 'hq' ? hqLevel : sp.level;
+      const key = `${sp.bId || sp.filler || 'empty'}|${level}`;
       if (p.key === key) continue;
       const wasBuilt = p.key !== null;
       const sameKind = p.key && p.key.split('|')[0] === key.split('|')[0];
       p.key = key;
-      this.rebuildPlot(p, sp, animate && wasBuilt, sameKind);
+      this.rebuildPlot(p, sp.filler === 'hq' ? { ...sp, level } : sp, animate && wasBuilt, sameKind && sp.filler !== 'hq');
     }
   }
 
@@ -120,7 +130,7 @@ export class City {
     const seed = p.id * 13 + 7;
     let res;
     if (sp.bId) res = BUILDING_MODELS[sp.bId](vb, seed, sp.level || 1);
-    else if (sp.filler) res = filler(vb, sp.filler, seed);
+    else if (sp.filler) res = filler(vb, sp.filler, seed, sp.level);
     else res = emptyLot(vb, seed);
     const g = new THREE.Group();
     g.position.set(p.x, LOT, p.z);

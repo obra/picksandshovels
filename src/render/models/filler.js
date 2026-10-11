@@ -4,7 +4,7 @@
 import { P } from '../palette.js';
 import { GOLD_RUSH_SIGNS } from '../../content/flavor.js';
 import {
-  rnd, choose, result, buildingColor, lot, tree, palm, bush, car, person, acUnit, waterTank, awning,
+  rnd, choose, result, buildingColor, lot, tree, palm, bush, car, person, acUnit, waterTank, awning, ledStrip, antenna,
 } from './common.js';
 
 const SHOP_SIGNS = [
@@ -144,8 +144,112 @@ function westernShop(vb, seed) {
   });
 }
 
-// Picks & Shovels Inc. headquarters: still the general store it was in 1849.
-export function hq(vb, seed) {
+// Picks & Shovels Inc. headquarters grows with the company. Level 1 is the
+// 1849 general store; every later level keeps a piece of it.
+export function hq(vb, seed, level = 1) {
+  if (level === 2) return hqBrick(vb, seed);
+  if (level === 3) return hqTower(vb, seed);
+  if (level >= 4) return hqGold(vb, seed);
+  return hqStore(vb, seed);
+}
+
+// The goldish pick and shovel crossed on a facade at height y.
+function crossedTools(vb, face, plane, y, size = 1) {
+  const s = size;
+  for (let i = 0; i < 7; i++) {
+    const t = (i - 3) * 0.05 * s;
+    vb.panel(face, plane, t - 0.025 * s, y + t - 0.025 * s, t + 0.025 * s, y + t + 0.025 * s, P.yellow, 2);
+    vb.panel(face, plane, t - 0.025 * s, y - t - 0.025 * s, t + 0.025 * s, y - t + 0.025 * s, P.yellow, 2);
+  }
+}
+
+function hqBrick(vb, seed) {
+  lot(vb, 'plaza');
+  const brick = 0xb3563a;
+  const h = 1.0;
+  vb.box(-0.75, 0, -0.75, 0.75, h, 0.6, brick);
+  for (let i = 1; i < 8; i++) vb.panel('+z', 0.6, -0.75, (h * i) / 8, 0.75, (h * i) / 8 + 0.012, 0x8e4030);
+  vb.windows(-0.75, 0.3, -0.75, 0.75, h, 0.6, { seed, colors: [P.windowWarm], floorH: 0.3 });
+  vb.box(-0.8, h, -0.8, 0.8, h + 0.08, 0.65, 0x6a4028);
+  // The old wooden front, now a lobby.
+  westernFront(vb, seed, 0.6, 0.4, 0xc68d55);
+  crossedTools(vb, '+z', 0.6, h - 0.15);
+  // A small datacenter annex out back, humming.
+  vb.box(-0.7, h + 0.08, -0.7, 0.1, h + 0.35, -0.2, 0xd8dce6);
+  ledStrip(vb, -0.65, 0.05, h + 0.25, -0.195, P.gpuGreen);
+  return result(h + 0.6, {
+    signs: [{ text: 'PICKS & SHOVELS INC.', face: '+z', x: 0, y: 0.6, z: 0.6, fg: '#ffe382', bg: '#4a2a1a', maxW: 1.4 }],
+    smoke: [{ x: -0.3, y: h + 0.4, z: -0.45, color: 0xdddddd, rate: 0.2 }],
+  });
+}
+
+function hqTower(vb, seed) {
+  lot(vb, 'plaza');
+  const h = 2.6;
+  vb.box(-0.7, 0, -0.7, 0.7, h, 0.55, 0x9fc9f0);
+  vb.windows(-0.7, 0.5, -0.7, 0.7, h, 0.55, { seed, colors: [P.windowCool, P.white], litChance: 0.8 });
+  vb.box(-0.75, h, -0.75, 0.75, h + 0.1, 0.6, P.ink);
+  // The original false front, bolted to the ground floor of a glass tower.
+  westernFront(vb, seed, 0.6, 0.4, 0xc68d55);
+  crossedTools(vb, '+z', 0.55, h - 0.35, 1.4);
+  // Rooftop gold pick sculpture.
+  vb.box(-0.03, h + 0.1, -0.03, 0.03, h + 0.7, 0.03, 0x8a5a33);
+  vb.box(-0.35, h + 0.62, -0.05, 0.35, h + 0.74, 0.05, P.yellow, { emit: 2 });
+  vb.box(-0.4, h + 0.55, -0.04, -0.3, h + 0.64, 0.04, P.yellow, { emit: 2 });
+  vb.box(0.3, h + 0.55, -0.04, 0.4, h + 0.64, 0.04, P.yellow, { emit: 2 });
+  antenna(vb, 0.5, h + 0.1, -0.5, 0.5);
+  return result(h + 0.9, {
+    signs: [
+      { text: 'PICKS & SHOVELS', face: '+z', x: 0, y: h - 0.7, z: 0.55, fg: '#22232b', bg: '#ffe382', maxW: 1.3 },
+      { text: 'EST. 1849', face: '+z', x: 0, y: 0.62, z: 0.6, fg: '#ffe382', bg: '#4a2a1a', maxW: 1.0 },
+    ],
+  });
+}
+
+function hqGold(vb, seed) {
+  lot(vb, 'plaza');
+  const h = 3.8;
+  // A shovel handle of a building, in gold, because at this point why not.
+  vb.box(-0.42, 0, -0.42, 0.42, h, 0.42, 0xd9a520);
+  for (let i = 0; i < 12; i++) vb.panel('+z', 0.42, -0.42, 0.4 + i * 0.28, 0.42, 0.42 + i * 0.28, 0xffe382, 1);
+  for (let i = 0; i < 12; i++) vb.panel('+x', 0.42, -0.42, 0.4 + i * 0.28, 0.42, 0.42 + i * 0.28, 0xffe382, 1);
+  vb.box(-0.55, h, -0.12, 0.55, h + 0.14, 0.12, 0xd9a520);
+  // The giant shovel blade on top.
+  vb.box(-0.5, h + 0.14, -0.08, 0.5, h + 0.95, 0.08, P.yellow, { emit: 2 });
+  vb.box(-0.38, h + 0.95, -0.07, 0.38, h + 1.15, 0.07, P.yellow, { emit: 2 });
+  vb.box(-0.2, h + 1.15, -0.06, 0.2, h + 1.25, 0.06, P.yellow, { emit: 2 });
+  // The 1849 store, preserved out front as a museum.
+  const store = new ShiftedBuilder(vb, 0, 0.58);
+  store.box(-0.35, 0, -0.18, 0.35, 0.3, 0.18, 0xc68d55);
+  store.box(-0.35, 0, 0.18, 0.35, 0.48, 0.22, 0xc68d55);
+  store.panel('+z', 0.22, -0.08, 0.02, 0.08, 0.2, 0x4a2a1a);
+  for (const [x, z] of [[-0.75, 0.75], [0.75, 0.75], [0.75, -0.75]]) vb.box(x - 0.04, 0, z - 0.04, x + 0.04, 0.5, z + 0.04, P.yellow, { emit: 2 });
+  return result(h + 1.4, {
+    signs: [
+      { text: 'P&S', face: '+z', x: 0, y: h - 0.5, z: 0.42, fg: '#22232b', bg: '#ffe382', maxW: 0.7 },
+      { text: 'MUSEUM', face: '+z', x: 0, y: 0.38, z: 0.81, fg: '#ffe382', bg: '#4a2a1a', maxW: 0.6 },
+    ],
+  });
+}
+
+// Draws through to a builder with an x/z offset.
+class ShiftedBuilder {
+  constructor(vb, dx, dz) {
+    this.vb = vb;
+    this.dx = dx;
+    this.dz = dz;
+  }
+  box(x0, y0, z0, x1, y1, z1, c, o) {
+    return this.vb.box(x0 + this.dx, y0, z0 + this.dz, x1 + this.dx, y1, z1 + this.dz, c, o);
+  }
+  panel(face, plane, u0, v0, u1, v1, c, e) {
+    const shift = face[1] === 'z' ? this.dz : this.dx;
+    const along = face[1] === 'z' ? this.dx : this.dz;
+    return this.vb.panel(face, plane + shift, u0 + along, v0, u1 + along, v1, c, e);
+  }
+}
+
+function hqStore(vb, seed) {
   lot(vb, 'plaza');
   const wood = 0xc68d55;
   const s = 0.7;
@@ -186,8 +290,8 @@ export function hq(vb, seed) {
   });
 }
 
-export function filler(vb, kind, seed) {
-  if (kind === 'hq') return hq(vb, seed);
+export function filler(vb, kind, seed, level = 1) {
+  if (kind === 'hq') return hq(vb, seed, level);
   if (kind === 'shop') return rnd(seed, 78) < 0.3 ? westernShop(vb, seed) : shop(vb, seed);
   return rnd(seed, 77) < 0.55 ? house(vb, seed) : apartment(vb, seed);
 }

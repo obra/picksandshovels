@@ -6,6 +6,7 @@ import { B } from './sim/balance.js';
 import { CONTENT } from './content/index.js';
 import { ACHIEVEMENTS, ENDING_IDS, endingId } from './content/achievements.js';
 import { World } from './render/world.js';
+import { hqLevelFor } from './render/city.js';
 import { audio } from './audio/audio.js';
 import { Hud } from './ui/hud.js';
 import { Shop } from './ui/shop.js';
@@ -177,6 +178,7 @@ export class Game {
       saveMeta(this.meta);
     });
     this.lastIntensity = -1;
+    this.hqLevel = hqLevelFor(state.stats.peakCash);
     audio.music(state.boss ? 'boss' : 'play');
     if (state.boss) this.showBossBanner(state.boss.kind);
     this.notify.banner('era', `${this.sim.date(state).year} · ${this.sim.derived(state).eraName.toUpperCase()}`, 'THE GOLD RUSH IS ON', 'Sell GPUs to the labs. Keep the world in one piece.', 3600);
@@ -306,6 +308,13 @@ export class Game {
         if (this.saveTimer <= 0) {
           this.saveTimer = 8;
           this.save();
+        }
+        const hq = hqLevelFor(s.stats.peakCash);
+        if (hq !== this.hqLevel) {
+          this.hqLevel = hq;
+          audio.sfx('achievement');
+          const names = ['', '', 'a brick building with a datacenter out back', 'a glass tower (the 1849 storefront stays)', 'a solid gold shovel the size of a skyscraper'];
+          this.notify.toast('HQ UPGRADED', `Picks & Shovels Inc. moves into ${names[hq]}.`, 'shovel', 5000);
         }
         const intensity = Math.round(s.doom) / 100;
         if (intensity !== this.lastIntensity) {
