@@ -1,0 +1,23 @@
+{
+  "name": "picksandshovels",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "PICKS & SHOVELS — sell the GPUs, ride the hype, keep p(doom) under 100%.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "simulate": "node scripts/simulate.mjs"
+  },
+  "dependencies": {
+    "@fontsource/pixelify-sans": "^5.3.0",
+    "@fontsource/press-start-2p": "^5.3.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}
