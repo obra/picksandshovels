@@ -540,6 +540,40 @@ export class Game {
     }
   }
 
+  // Renders a 1200x630 social card from the live city and POSTs it to
+  // scripts/og-receiver.mjs. A maintenance tool; nothing in the game calls it.
+  async captureOgImage(url = 'http://localhost:5199/') {
+    const stage = this.world.stage;
+    this.world.update(0, this.state, { title: this.mode === 'title' });
+    const W = 1200;
+    const H = 630;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const src = stage.canvas;
+    const scale = Math.max(W / src.width, H / src.height);
+    const dw = src.width * scale;
+    const dh = src.height * scale;
+    ctx.drawImage(this.world.sky.canvas, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.fillStyle = '#fffdf5';
+    ctx.strokeStyle = '#22232b';
+    ctx.lineWidth = 6;
+    ctx.fillRect(40, 40, 560, 190);
+    ctx.strokeRect(40, 40, 560, 190);
+    ctx.fillStyle = '#22232b';
+    ctx.font = '44px "Press Start 2P"';
+    ctx.fillText('PICKS &', 70, 112);
+    ctx.fillText('SHOVELS', 70, 172);
+    ctx.font = '22px "Pixelify Sans"';
+    ctx.fillText('Sell the GPUs. Keep p(doom) under 100%.', 70, 212);
+    const data = c.toDataURL('image/png');
+    await fetch(url, { method: 'POST', body: data });
+    return data.length;
+  }
+
   async share(line) {
     const text = `${line} Sell the GPUs. Keep p(doom) under 100%. https://picksandshovels.org`;
     try {
