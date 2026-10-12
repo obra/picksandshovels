@@ -34,8 +34,9 @@ function statLine(b) {
 }
 
 export class Shop {
-  constructor(root, { sim, onBuy, onBuyUpgrade, onLabStance }) {
+  constructor(root, { sim, onBuy, onBuyUpgrade, onLabStance, onTab }) {
     this.sim = sim;
+    this.onTab = onTab;
     this.onLabStance = onLabStance;
     this.cat = 'compute';
     this.onBuy = onBuy;
@@ -43,7 +44,7 @@ export class Shop {
     this.tabEls = {};
     const tabs = h('div.tabs');
     for (const t of TABS) {
-      const el = h('button.tab', { 'data-cat': t.cat, onclick: () => this.setTab(t.cat) }, icon(TAB_ICON[t.cat]), t.label, h('span.badge', {}, 'NEW'));
+      const el = h('button.tab', { 'data-cat': t.cat, onclick: () => { this.setTab(t.cat); this.onTab?.(t.cat); } }, icon(TAB_ICON[t.cat]), t.label, h('span.badge', {}, 'NEW'));
       this.tabEls[t.cat] = el;
       tabs.append(el);
     }

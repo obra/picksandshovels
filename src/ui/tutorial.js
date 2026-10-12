@@ -67,7 +67,9 @@ const TIPS = [
 ];
 
 export class Tutorial {
-  constructor(root, meta, onFinish) {
+  constructor(root, meta, onFinish, { onTip, onSkip } = {}) {
+    this.onTip = onTip;
+    this.onSkip = onSkip;
     this.root = root;
     this.done = new Set(meta.tipsDone ? TIPS.map((t) => t.id) : []);
     this.onFinish = onFinish;
@@ -81,6 +83,7 @@ export class Tutorial {
   }
 
   skipAll() {
+    if (!this.finished) this.onSkip?.();
     for (const t of TIPS) this.done.add(t.id);
     this.hide();
     this.onFinish();
@@ -94,6 +97,7 @@ export class Tutorial {
     const tip = TIPS.find((t) => !this.done.has(t.id) && t.when(s));
     if (!tip) return;
     this.done.add(tip.id);
+    this.onTip?.(tip.id);
     this.el = h(
       'div.panel.tip',
       {},

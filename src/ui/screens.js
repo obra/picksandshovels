@@ -22,7 +22,7 @@ function logo() {
   return h('div.title-logo', {}, h('div.mark', {}, sprite('pick')), h('h1.title-h1', {}, 'PICKS &', h('br'), 'SHOVELS'), h('div.mark', {}, sprite('shovel')));
 }
 
-export function titleScreen(root, { content, meta, hasSave, onNew, onContinue, onHowTo }) {
+export function titleScreen(root, { content, meta, hasSave, onNew, onContinue, onHowTo, onTrophies, onTrophiesClosed }) {
   // The city is the backdrop here: keep it bright.
   const taglines = content.flavor.TAGLINES;
   const tagline = h('div.tagline', {}, taglines[Math.floor(Math.random() * taglines.length)]);
@@ -37,7 +37,7 @@ export function titleScreen(root, { content, meta, hasSave, onNew, onContinue, o
   if (hasSave) buttons.append(h('button.btn.big', { onclick: onContinue }, 'CONTINUE'));
   buttons.append(h(`button.btn.big${hasSave ? '.ghost' : ''}`, { onclick: onNew }, hasSave ? 'NEW GAME' : 'START SELLING'));
   buttons.append(h('button.btn.big.ghost', { onclick: onHowTo }, 'HOW TO PLAY'));
-  buttons.append(h('button.btn.big.ghost', { onclick: () => achievementsScreen(root, meta) }, 'TROPHIES'));
+  buttons.append(h('button.btn.big.ghost', { onclick: () => { onTrophies?.(); achievementsScreen(root, meta, onTrophiesClosed); } }, 'TROPHIES'));
   const el = modal(
     root,
     h(
@@ -89,7 +89,7 @@ export function howToScreen(root, onClose) {
   return el;
 }
 
-export function achievementsScreen(root, meta) {
+export function achievementsScreen(root, meta, onClose) {
   const list = h('div.ach-list');
   for (const a of ACHIEVEMENTS) {
     const got = !!meta.achievements[a.id];
@@ -103,7 +103,7 @@ export function achievementsScreen(root, meta) {
       {},
       h('h2', { style: { fontFamily: 'var(--display)', fontSize: '18px' } }, `TROPHY CASE ${n}/${ACHIEVEMENTS.length}`),
       list,
-      h('div.title-buttons', {}, h('button.btn.big', { onclick: () => el.remove() }, 'BACK')),
+      h('div.title-buttons', {}, h('button.btn.big', { onclick: () => { el.remove(); onClose?.(); } }, 'BACK')),
     ),
   );
   el.style.zIndex = 20;

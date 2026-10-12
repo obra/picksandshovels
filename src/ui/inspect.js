@@ -6,7 +6,8 @@ import { icon } from './icons.js';
 import { gpus } from './format.js';
 
 export class Inspect {
-  constructor(root, overlay, { world, getState, sim, content, isActive }) {
+  constructor(root, overlay, { world, getState, sim, content, isActive, onShow }) {
+    this.onShow = onShow;
     this.world = world;
     this.getState = getState;
     this.sim = sim;
@@ -50,6 +51,7 @@ export class Inspect {
     const hit = this.world.pick(x, y);
     if (!hit?.info) return this.hide();
     this.current = hit;
+    this.onShow?.();
     this.hideAt = holdMs ? performance.now() + holdMs : 0;
     this.render();
     this.el.classList.remove('hidden');

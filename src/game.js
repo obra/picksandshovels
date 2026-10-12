@@ -22,7 +22,8 @@ import { money } from './ui/format.js';
 import { h } from './ui/dom.js';
 import { renderShareCard, shareSummary } from './ui/sharecard.js';
 import { Inspect } from './ui/inspect.js';
-import { track } from './analytics.js';
+import { track, setUserProps } from './analytics.js';
+import { Journey } from './journey.js';
 
 const ERA_BLURBS = [
   '',
@@ -55,12 +56,15 @@ export class Game {
     this.achTimer = 0;
     this.redFlash = h('div.flash-red');
     this.overlay.append(this.redFlash);
+    this.journey = new Journey({ track, setUserProps });
+    this.journey.player({ runs: this.meta.runs, endingsFound: ENDING_IDS.filter((id) => this.meta.endings[id]).length });
     this.inspect = new Inspect(this.ui, this.overlay, {
       world: this.world,
       getState: () => this.state,
       sim: this.sim,
       content: CONTENT,
       isActive: () => (this.mode === 'play' || this.mode === 'title') && !this.cards?.open,
+      onShow: () => this.journey.feature('tooltip', this.mode === 'play' ? this.state : null),
     });
     this.bindInput();
   }
@@ -74,15 +78,20 @@ export class Game {
       onPause: () => this.togglePause(),
       onMute: () => {
         audio.setMuted(!audio.isMuted());
+        track('sound_toggle', { muted: audio.isMuted() });
         return audio.isMuted();
       },
       isMuted: () => audio.isMuted(),
-      onRotate: (dir) => this.world.stage.rotate(dir),
+      onRotate: (dir) => {
+        this.world.stage.rotate(dir);
+        this.journey.feature('rotate', this.state);
+      },
     });
     this.shop = new Shop(this.ui, {
       sim: this.sim,
       onBuy: (id, el, first) => this.buy(id, el, first),
       onBuyUpgrade: (id, el) => this.buyUpgrade(id, el),
+      onTab: (cat) => this.mode === 'play' && this.journey.feature(`tab_${cat}`, this.state),
       onLabStance: (id, stance) => {
         if (this.mode === 'play' && this.sim.setLabStance(this.state, id, stance)) audio.sfx('click');
       },
@@ -155,13 +164,19 @@ export class Game {
     this.world.reset(this.state);
     this.world.stage.attract = true;
     audio.music('title');
+    this.journey.screen('title');
     this.closeScreen = titleScreen(this.ui, {
       content: CONTENT,
       meta: this.meta,
       hasSave: !!loadGame(),
       onNew: () => this.newGame(),
       onContinue: () => this.continueGame(),
-      onHowTo: () => howToScreen(this.ui, () => {}),
+      onHowTo: () => {
+        this.journey.screen('howto');
+        howToScreen(this.ui, () => this.journey.screen('title'));
+      },
+      onTrophies: () => this.journey.screen('trophies'),
+      onTrophiesClosed: () => this.journey.screen('title'),
     });
   }
 
@@ -175,15 +190,17 @@ export class Game {
     const raw = loadGame();
     if (!raw) return this.newGame();
     try {
-      this.beginRun(this.sim.deserialize(raw));
+      this.beginRun(this.sim.deserialize(raw), { continued: true });
       track('game_start', { continued: true });
     } catch {
       this.newGame();
     }
   }
 
-  beginRun(state) {
+  beginRun(state, { continued = false } = {}) {
     this.runId = (this.runId || 0) + 1;
+    this.journey.runStarted({ continued });
+    this.journey.screen('game');
     this.closeScreen?.();
     this.closeScreen = null;
     this.state = state;
@@ -198,10 +215,18 @@ export class Game {
     this.updateInsets();
     this.world.stage.attract = false;
     this.tutorial?.hide();
-    this.tutorial = new Tutorial(this.ui, this.meta, () => {
-      this.meta.tipsDone = true;
-      saveMeta(this.meta);
-    });
+    this.tutorial = new Tutorial(
+      this.ui,
+      this.meta,
+      () => {
+        this.meta.tipsDone = true;
+        saveMeta(this.meta);
+      },
+      {
+        onTip: (id) => track('tutorial_tip', { tip: id, seconds: Math.round(this.state.t) }),
+        onSkip: () => track('tutorial_skip', { seconds: Math.round(this.state.t) }),
+      },
+    );
     this.lastIntensity = -1;
     this.hqLevel = hqLevelFor(state.stats.peakCash);
     audio.music(state.boss ? 'boss' : 'play');
@@ -222,8 +247,10 @@ export class Game {
         audio.setMuted(!audio.isMuted());
         this.hud?.updateMute(audio.isMuted());
       }
-      if (k === 'q') this.world.stage.rotate(-1);
-      if (k === 'e') this.world.stage.rotate(1);
+      if (k === 'q' || k === 'e') {
+        this.world.stage.rotate(k === 'q' ? -1 : 1);
+        if (this.mode === 'play') this.journey.feature('rotate', this.state);
+      }
       if (k === '=' || k === '+') this.world.stage.setZoom(this.world.stage.zoomGoal * 1.25);
       if (k === '-') this.world.stage.setZoom(this.world.stage.zoomGoal / 1.25);
       if (this.mode === 'play' && !this.cards?.open) {
@@ -236,21 +263,29 @@ export class Game {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.mode === 'play' && !this.cards?.open) this.togglePause();
     });
+    // Closing the tab mid-run is the biggest drop-off signal there is.
+    window.addEventListener('pagehide', () => {
+      if (this.mode === 'play' || this.mode === 'paused') this.journey.abandon(this.state);
+    });
   }
 
   togglePause() {
     if (this.mode === 'play') {
+      this.journey.feature('pause', this.state);
       this.mode = 'paused';
       audio.duck(9999);
       this.closePause = pauseScreen(this.ui, {
         onResume: () => this.togglePause(),
         onRestart: () => {
           this.closePause();
+          this.journey.quit(this.state);
+          track('run_restart', { seconds: Math.round(this.state.t) });
           this.newGame();
         },
         onQuit: () => {
           this.closePause();
           this.save();
+          this.journey.quit(this.state);
           this.showTitle();
         },
       });
@@ -303,6 +338,7 @@ export class Game {
       this.cards.unstick();
       return;
     }
+    this.journey.cardChosen({ id: ev.id, option: i, label: ev.options[i].label }, this.state);
     audio.sfx('choose');
     this.cards.showResult(ev.options[i], this.state.cash - before);
   }
@@ -329,6 +365,7 @@ export class Game {
       if (s.boss) this.notify.updateBoss(s.boss.ttl / s.boss.maxTtl);
       this.redFlash.classList.toggle('on', s.doom >= 80);
       if (playing) {
+        this.journey.tick(s);
         this.ticker.update(dt, s);
         this.tutorial.update(s, now);
         this.achTimer -= dt;
@@ -381,6 +418,7 @@ export class Game {
     const s = this.state;
     if (this.mode === 'title') return;
     this.world.onFx(f.type === 'ending' && f.ending.singularity ? { type: 'noop' } : f, s);
+    this.journey.onFx(f, s);
     switch (f.type) {
       case 'incident':
         audio.sfx('alarm');
@@ -537,6 +575,8 @@ export class Game {
     });
     this.meta.runs++;
     this.meta.endings[key] = (this.meta.endings[key] || 0) + 1;
+    this.journey.runEnded();
+    this.journey.player({ runs: this.meta.runs, endingsFound: ENDING_IDS.filter((id) => this.meta.endings[id]).length });
     const fresh = this.checkAchievements(ending);
     const score = ending.type === 'survive' ? 1000 - ending.doomAtRoll : Math.floor(this.state.t / 20);
     const date = this.sim.date(this.state);
@@ -557,6 +597,7 @@ export class Game {
       setTimeout(() => {
         if (!current()) return;
         this.setPlayUIVisible(false);
+        this.journey.screen('ending');
         const E = CONTENT.endings[key] || CONTENT.endings.generic;
         const date = this.sim.date(this.state);
         const shareCard = renderShareCard({ world: this.world, state: this.state, ending, E, date });
@@ -569,8 +610,14 @@ export class Game {
           sim: this.sim,
           newAchievements: fresh,
           discovered: ENDING_IDS.filter((id) => this.meta.endings[id]).length,
-          onAgain: () => this.newGame(),
-          onTitle: () => this.showTitle(),
+          onAgain: () => {
+            track('end_action', { action: 'play_again', ending: key });
+            this.newGame();
+          },
+          onTitle: () => {
+            track('end_action', { action: 'main_menu', ending: key });
+            this.showTitle();
+          },
           shareCard,
           summary,
           sharing: {
