@@ -22,8 +22,9 @@ export class Journey {
   screen(name) {
     if (name === this.lastScreen) return;
     this.lastScreen = name;
-    const origin = typeof location !== 'undefined' ? location.origin : '';
-    this.track('page_view', { page_title: TITLES[name] || name, page_location: `${origin}/#${name}` });
+    // Keep the real landing URL (its utm_* query attributes the visit) and name the screen in the hash.
+    const page = typeof location !== 'undefined' ? `${location.origin}${location.pathname}${location.search}` : '';
+    this.track('page_view', { page_title: TITLES[name] || name, page_location: `${page}#${name}` });
   }
 
   player({ runs, endingsFound }) {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Journey } from '../src/journey.js';
 
 function setup() {
@@ -77,6 +77,20 @@ describe('journey analytics', () => {
     j.screen('title');
     j.screen('game');
     expect(sent.filter((e) => e.name === 'page_view').map((e) => e.page_title)).toEqual(['Title', 'Game']);
+  });
+
+  it('keeps the landing URL query in screen page views so campaign tags still attribute the visit', () => {
+    vi.stubGlobal('location', new URL('https://picksandshovels.org/?utm_source=newsletter&utm_medium=email'));
+    try {
+      const { j, sent } = setup();
+      j.screen('title');
+      j.screen('game');
+      const urls = sent.filter((e) => e.name === 'page_view').map((e) => new URL(e.page_location));
+      expect(urls.map((u) => u.searchParams.get('utm_source'))).toEqual(['newsletter', 'newsletter']);
+      expect(urls.map((u) => u.hash)).toEqual(['#title', '#game']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('keeps returning-player traits as user properties', () => {
