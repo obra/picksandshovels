@@ -680,7 +680,7 @@ export class Game {
     ctx.font = '44px "Press Start 2P"';
     ctx.fillText('PICKS &', 70, 112);
     ctx.fillText('SHOVELS', 70, 172);
-    ctx.font = '22px "Pixelify Sans"';
+    ctx.font = '22px "Atkinson Hyperlegible Next"';
     ctx.fillText('Sell the GPUs. Keep p(doom) under 100%.', 70, 212);
     const data = c.toDataURL('image/png');
     await fetch(url, { method: 'POST', body: data });

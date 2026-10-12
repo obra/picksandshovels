@@ -150,8 +150,10 @@ fireworks), an epitaph, stats, achievements, and Share/Play Again buttons.
   palettes.
 - Dense details: pedestrians, cars, boats, drones, clouds, blimp, billboards,
   a red suspension bridge, a pier, palm trees, food trucks.
-- UI uses pixel fonts (Press Start 2P for display, Pixelify Sans for body),
-  chunky bordered panels, and an eBoy palette.
+- UI uses Press Start 2P for short display text (logo, buttons, big numbers)
+  and Atkinson Hyperlegible Next for everything you read: body text, card and
+  banner headlines, tooltips. Chunky bordered panels and an eBoy palette.
+  Nothing smaller than 10px.
 - At high doom the billboards glitch to "EVERYTHING IS FINE :)", red sirens
   turn on, a heartbeat plays and the vignette pulses.
 

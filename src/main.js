@@ -1,6 +1,6 @@
 import '@fontsource/press-start-2p';
-import '@fontsource/pixelify-sans/400.css';
-import '@fontsource/pixelify-sans/600.css';
+import '@fontsource/atkinson-hyperlegible-next/400.css';
+import '@fontsource/atkinson-hyperlegible-next/600.css';
 import './style.css';
 import { Game } from './game.js';
 

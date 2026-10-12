@@ -16,13 +16,13 @@
   --pink: #ff9ec8;
   --muted: #8a8ea0;
   --display: 'Press Start 2P', monospace;
-  --body: 'Pixelify Sans', system-ui, sans-serif;
+  --body: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
   --shadow: 4px 4px 0 var(--ink);
   --shadow-sm: 2px 2px 0 var(--ink);
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1d2b; color: var(--ink); font-family: var(--body); -webkit-font-smoothing: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1d2b; color: var(--ink); font-family: var(--body); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button { font: inherit; color: inherit; }
 #app { position: fixed; inset: 0; }
 #stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; }
@@ -100,7 +100,7 @@ button { font: inherit; color: inherit; }
 .money .rev { font-family: var(--body); font-weight: 600; letter-spacing: 0.02em; font-size: 15px; color: var(--green); margin-top: 6px; }
 .money .gpus { font-size: 15px; color: var(--muted); margin-top: 2px; }
 .money .buffs { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px; }
-.buff { font-size: 11px; background: var(--ink); color: var(--yellow); padding: 1px 5px; }
+.buff { font-size: 12px; background: var(--ink); color: var(--yellow); padding: 1px 5px; }
 .buff.bad { color: var(--pink); }
 .hud-buttons { display: flex; gap: 6px; justify-content: flex-end; margin-top: 8px; }
 .icon-btn { width: 34px; height: 34px; padding: 0; background: var(--paper); }
@@ -117,7 +117,7 @@ button { font: inherit; color: inherit; }
 .tab[data-cat='safety'].active { box-shadow: inset 0 -4px 0 var(--blue); }
 .tab[data-cat='hype'].active { box-shadow: inset 0 -4px 0 var(--magenta); }
 .tab[data-cat='upgrades'].active { box-shadow: inset 0 -4px 0 var(--yellow); }
-.tab .badge { background: var(--red); color: white; font-size: 7px; padding: 2px 3px; display: none; }
+.tab .badge { background: var(--red); color: white; font-size: 10px; padding: 2px 3px; display: none; }
 .tab.has-affordable .badge { display: inline-block; }
 .shop-hint { font-size: 15px; padding: 6px 10px; color: var(--muted); border-bottom: 2px dashed #d8d3c4; }
 .items { overflow-y: auto; flex: 1; scrollbar-width: thin; }
@@ -229,7 +229,7 @@ button { font: inherit; color: inherit; }
 .banner-wrap { position: absolute; top: 150px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(560px, 92vw); }
 .banner { pointer-events: auto; padding: 10px 16px; text-align: center; animation: drop-in 250ms steps(4); width: 100%; }
 .banner .kicker { font-family: var(--body); font-weight: 600; letter-spacing: 0.02em; font-size: 15px; color: var(--red); }
-.banner .big { font-family: var(--display); font-size: 15px; margin-top: 6px; line-height: 1.35; }
+.banner .big { font-family: var(--body); font-weight: 600; font-size: 21px; margin-top: 4px; line-height: 1.2; }
 .banner .small { font-size: 15px; margin-top: 4px; color: #4a4c5a; }
 .banner.release { background: var(--gold); }
 .banner.release .kicker { color: var(--ink); }
@@ -255,14 +255,14 @@ button { font: inherit; color: inherit; }
 .tip .who { flex: none; width: 46px; height: 46px; background: var(--yellow); border: 2px solid var(--ink); padding: 4px; }
 .tip .txt { font-size: 17px; line-height: 1.2; flex: 1; }
 .tip .txt b { font-family: var(--body); font-weight: 600; letter-spacing: 0.02em; font-size: 14px; display: block; margin-bottom: 4px; color: var(--blue); }
-.tip .btn { font-size: 9px; padding: 8px 10px; }
+.tip .btn { font-size: 10px; padding: 8px 10px; }
 
 /* ── modal: cards & screens ─────────────────────────── */
 .modal { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(20, 21, 30, 0.45); z-index: 10; padding: 16px; }
 .card { width: min(480px, 94vw); padding: 0; animation: card-in 300ms steps(5); }
 @keyframes card-in { 0% { transform: rotate(-4deg) translateY(40px); opacity: 0; } 100% { transform: none; opacity: 1; } }
 .card .head { background: var(--ink); color: var(--paper); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.card .head .t { font-family: var(--display); font-size: 13px; line-height: 1.35; }
+.card .head .t { font-family: var(--body); font-weight: 600; font-size: 19px; line-height: 1.2; }
 .card .head .src { font-family: var(--body); font-weight: 600; letter-spacing: 0.02em; font-size: 13px; color: var(--yellow); white-space: nowrap; }
 .card .body { padding: 16px; font-size: 19px; line-height: 1.25; }
 .card .opts { display: flex; flex-direction: column; gap: 10px; padding: 0 16px 16px; }
@@ -329,18 +329,19 @@ button { font: inherit; color: inherit; }
 @media (max-width: 860px) {
   .hud { grid-template-columns: 1fr 1fr; top: 6px; left: 6px; right: 6px; gap: 6px; }
   .meters { grid-column: 1 / -1; grid-row: 2; padding: 6px 8px 8px; }
-  .brand .name { font-size: 9px; }
+  .brand .name { font-size: 10px; }
   .brand .logo { display: none; }
   .money { min-width: 0; padding: 6px 8px; }
   .money .cash { font-size: 15px; }
   .doom-pct { font-size: 14px; min-width: 50px; }
-  .meter { grid-template-columns: 80px 1fr 30px; }
+  .meter { grid-template-columns: 84px 1fr 30px; }
+  .meter .lbl { font-size: 13px; }
   .shop { top: auto; bottom: 38px; left: 0; right: 0; width: auto; height: 50vh; transform: translateY(calc(100% + 60px)); transition: transform 200ms steps(4); z-index: 6; }
   .shop.open { transform: none; }
   .shop-toggle { display: inline-flex; position: absolute; right: 8px; bottom: 48px; z-index: 7; }
   .abilities { bottom: 48px; left: 6px; gap: 6px; }
-  .ability { width: 58px; height: 58px; }
-  .ability .lbl { font-size: 11px; }
+  .ability { width: 70px; height: 64px; padding: 4px 3px; gap: 3px; }
+  .ability .lbl { font-size: 11px; line-height: 1.15; letter-spacing: 0; }
   .toasts { right: 8px; bottom: 120px; }
   .banner-wrap { top: 215px; }
   .tip { bottom: 116px; left: 50%; width: 92vw; }
@@ -388,7 +389,7 @@ button { font: inherit; color: inherit; }
 .tomb { display: flex; flex-direction: column; align-items: center; margin-bottom: 14px; }
 .stone { background: #8e93a3; color: #22232b; border: 4px solid #fff; border-bottom: none; border-radius: 70px 70px 0 0; padding: 26px 26px 14px; font-family: var(--display); font-size: 11px; line-height: 1.9; min-width: 230px; box-shadow: inset -8px 0 0 #6a6e7c; }
 .stone .yr { margin-top: 6px; }
-.stone .pep { margin-top: 10px; font-size: 7px; color: #3a3c48; }
+.stone .pep { margin-top: 10px; font-size: 10px; color: #3a3c48; }
 .dirt { width: 300px; height: 14px; background: repeating-linear-gradient(90deg, #3fbf6a 0 6px, #2f9a52 6px 12px); border: 3px solid #fff; border-top-width: 0; }
 .trail-lines { text-align: left; font-size: 18px; line-height: 1.3; min-height: 140px; color: #e8e8e8; }
 .trail-lines p { margin: 0 0 8px; }
@@ -406,7 +407,7 @@ button { font: inherit; color: inherit; }
 
 /* ── hover tooltips and lab tags ────────────────────── */
 .inspect { position: fixed; z-index: 8; max-width: 300px; padding: 8px 11px; pointer-events: none; }
-.in-title { font-family: var(--display); font-size: 12px; line-height: 1.4; margin-bottom: 4px; }
+.in-title { font-family: var(--body); font-weight: 600; font-size: 17px; line-height: 1.2; margin-bottom: 4px; }
 .in-text { font-size: 17px; line-height: 1.2; }
 .in-extra { font-size: 14px; font-weight: 600; color: var(--blue); margin-top: 6px; line-height: 1.25; }
 .lab-tag { position: absolute; left: 0; top: 0; pointer-events: none; background: rgba(34, 35, 43, 0.82); color: #fff; font-weight: 600; font-size: 13px; padding: 1px 6px 2px; border: 2px solid #fff; white-space: nowrap; display: flex; align-items: center; gap: 5px; }

@@ -65,7 +65,7 @@ export function shareSummary({ ending, E, state, date }) {
 
 // world: the World (we render one frame and copy its canvases).
 export async function renderShareCard({ world, state, ending, E, date }) {
-  await Promise.all([document.fonts.load('20px "Press Start 2P"'), document.fonts.load('24px "Pixelify Sans"')]);
+  await Promise.all([document.fonts.load('20px "Press Start 2P"'), document.fonts.load('24px "Atkinson Hyperlegible Next"')]);
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
@@ -137,7 +137,7 @@ export async function renderShareCard({ world, state, ending, E, date }) {
     y = bottom + 30;
   } else {
     y = text(ctx, E.title.toUpperCase(), px + 28, y, '30px "Press Start 2P"', fg, pw - 56, 42);
-    y = text(ctx, E.subtitle, px + 28, y + 8, '26px "Pixelify Sans"', '#4a4c5a', pw - 56, 30);
+    y = text(ctx, E.subtitle, px + 28, y + 8, '26px "Atkinson Hyperlegible Next"', '#4a4c5a', pw - 56, 30);
     y += 16;
     y = text(ctx, outcomeLine(ending, date), px + 28, y + 6, '14px "Press Start 2P"', good ? '#2f9a52' : '#c63a36', pw - 56, 24);
     y += 22;
