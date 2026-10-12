@@ -18,6 +18,21 @@
     <meta name="twitter:image" content="https://picksandshovels.org/og.png" />
     <meta name="theme-color" content="#1b1d2b" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <!-- Google tag (gtag.js), Prime Radiant's property. Only on the real site,
+         so local development doesn't show up in the numbers. -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      if (/(^|\.)picksandshovels\.org$/.test(location.hostname)) {
+        var ga = document.createElement('script');
+        ga.async = true;
+        ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-4QCB4QGJVC';
+        document.head.appendChild(ga);
+        gtag('js', new Date());
+        gtag('config', 'G-4QCB4QGJVC');
+      }
+    </script>
   </head>
   <body>
     <div id="app">

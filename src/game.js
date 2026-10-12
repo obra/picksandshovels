@@ -22,6 +22,7 @@ import { money } from './ui/format.js';
 import { h } from './ui/dom.js';
 import { renderShareCard, shareSummary } from './ui/sharecard.js';
 import { Inspect } from './ui/inspect.js';
+import { track } from './analytics.js';
 
 const ERA_BLURBS = [
   '',
@@ -166,6 +167,7 @@ export class Game {
 
   newGame() {
     clearGame();
+    track('game_start', { continued: false });
     this.beginRun(this.sim.newGame((Math.random() * 2 ** 31) | 0));
   }
 
@@ -174,6 +176,7 @@ export class Game {
     if (!raw) return this.newGame();
     try {
       this.beginRun(this.sim.deserialize(raw));
+      track('game_start', { continued: true });
     } catch {
       this.newGame();
     }
@@ -524,6 +527,14 @@ export class Game {
     this.notify.endBoss();
     this.redFlash.classList.remove('on');
     const key = endingId(ending);
+    track('game_end', {
+      ending: key,
+      ending_type: ending.type,
+      minutes: Math.round(this.state.t / 6) / 10,
+      doom: Math.round(this.state.doom),
+      year: this.sim.date(this.state).year,
+      roll: ending.roll ?? null,
+    });
     this.meta.runs++;
     this.meta.endings[key] = (this.meta.endings[key] || 0) + 1;
     const fresh = this.checkAchievements(ending);
@@ -563,12 +574,12 @@ export class Game {
           shareCard,
           summary,
           sharing: {
-            onCopyBoth: (blob, sum) => this.copyBoth(blob, sum),
-            onCopyImage: (blob) => this.copyImage(blob),
-            onCopyText: (blob, sum) => this.copyText(sum),
-            onShare: (blob, sum) => this.nativeShare(blob, sum),
-            onDownload: (blob) => this.downloadImage(blob),
-            onTweet: (blob, sum) => this.tweet(sum),
+            onCopyBoth: (blob, sum) => (track('share', { method: 'copy_both', ending: key }), this.copyBoth(blob, sum)),
+            onCopyImage: (blob) => (track('share', { method: 'copy_image', ending: key }), this.copyImage(blob)),
+            onCopyText: (blob, sum) => (track('share', { method: 'copy_text', ending: key }), this.copyText(sum)),
+            onShare: (blob, sum) => (track('share', { method: 'native', ending: key }), this.nativeShare(blob, sum)),
+            onDownload: (blob) => (track('share', { method: 'download', ending: key }), this.downloadImage(blob)),
+            onTweet: (blob, sum) => (track('share', { method: 'twitter', ending: key }), this.tweet(sum)),
           },
         });
       }, 4200);
