@@ -28,3 +28,26 @@ describe('share card text', () => {
     expect(wrapForTest(ctx, 'aa bb', 1000)).toEqual(['aa bb']);
   });
 });
+
+import { shareSummary } from '../src/ui/sharecard.js';
+
+describe('share summary', () => {
+  const E = { title: 'A World Of Paperclips', subtitle: 'The universe is now extremely well organized.', stamp: 'CLIPPED' };
+  const state = { doom: 100, releases: 4, stats: { peakCash: 9.99e6 } };
+  const date = { year: 2028, quarter: 1 };
+
+  it('tells the story in plain text with the link', () => {
+    const { text } = shareSummary({ ending: { type: 'doom', cause: 'paperclips' }, E, state, date });
+    expect(text).toContain('A World Of Paperclips');
+    expect(text).toContain('P(DOOM) HIT 100% IN 2028 Q1');
+    expect(text).toContain('The universe is now extremely well organized.');
+    expect(text).toContain('https://picksandshovels.org');
+  });
+
+  it('has an HTML version with a real hyperlink, escaped', () => {
+    const { html } = shareSummary({ ending: { type: 'survive', roll: 97, doomAtRoll: 20 }, E: { ...E, title: 'Fish & <Chips>' }, state, date });
+    expect(html).toContain('<a href="https://picksandshovels.org">picksandshovels.org</a>');
+    expect(html).toContain('Fish &amp; &lt;Chips&gt;');
+    expect(html).not.toContain('<Chips>');
+  });
+});

@@ -20,7 +20,7 @@ import { titleScreen, howToScreen, pauseScreen, rollScreen, endingScreen } from 
 import { loadMeta, saveMeta, loadGame, saveGame, clearGame } from './ui/storage.js';
 import { money } from './ui/format.js';
 import { h } from './ui/dom.js';
-import { renderShareCard } from './ui/sharecard.js';
+import { renderShareCard, shareSummary } from './ui/sharecard.js';
 import { Inspect } from './ui/inspect.js';
 
 const ERA_BLURBS = [
@@ -547,7 +547,9 @@ export class Game {
         if (!current()) return;
         this.setPlayUIVisible(false);
         const E = CONTENT.endings[key] || CONTENT.endings.generic;
-        const shareCard = renderShareCard({ world: this.world, state: this.state, ending, E, date: this.sim.date(this.state) });
+        const date = this.sim.date(this.state);
+        const shareCard = renderShareCard({ world: this.world, state: this.state, ending, E, date });
+        const summary = shareSummary({ ending, E, state: this.state, date });
         this.closeScreen = endingScreen(this.ui, {
           content: CONTENT,
           ending,
@@ -559,10 +561,14 @@ export class Game {
           onAgain: () => this.newGame(),
           onTitle: () => this.showTitle(),
           shareCard,
+          summary,
           sharing: {
-            onShareImage: (blob, line) => this.shareImage(blob, line),
+            onCopyBoth: (blob, sum) => this.copyBoth(blob, sum),
+            onCopyImage: (blob) => this.copyImage(blob),
+            onCopyText: (blob, sum) => this.copyText(sum),
+            onShare: (blob, sum) => this.nativeShare(blob, sum),
             onDownload: (blob) => this.downloadImage(blob),
-            onTweet: (line) => this.tweet(line),
+            onTweet: (blob, sum) => this.tweet(sum),
           },
         });
       }, 4200);
@@ -623,28 +629,65 @@ export class Game {
     return data.length;
   }
 
-  shareText(line) {
-    return `${line} Sell the GPUs. Keep p(doom) under 100%. https://picksandshovels.org`;
+  // Image, plain text and HTML (with the image inline and a real link) in one
+  // clipboard write, so whatever you paste into picks the best it can use.
+  async copyBoth(blob, sum) {
+    try {
+      const dataUrl = await blobToDataUrl(blob);
+      const html = `${sum.html}<p><img src="${dataUrl}" width="600" alt="PICKS &amp; SHOVELS ending card"></p>`;
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob,
+          'text/plain': new Blob([sum.text], { type: 'text/plain' }),
+          'text/html': new Blob([html], { type: 'text/html' }),
+        }),
+      ]);
+      return 'COPIED BOTH!';
+    } catch {
+      // Some browsers take one kind at a time: at least get the words out.
+      const ok = await this.copyText(sum);
+      return ok ? 'TEXT COPIED. NOW COPY IMAGE' : 'COPY FAILED';
+    }
   }
 
-  // Phones: the native share sheet with the image attached. Desktop: copy the
-  // image to the clipboard, falling back to a download.
-  async shareImage(blob, line) {
-    const file = new File([blob], 'picks-and-shovels.png', { type: 'image/png' });
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: this.shareText(line), title: 'PICKS & SHOVELS' });
-        return 'SHARED!';
-      }
-    } catch (err) {
-      if (err?.name === 'AbortError') return null;
-    }
+  async copyImage(blob) {
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       return 'IMAGE COPIED!';
     } catch {
       this.downloadImage(blob);
-      return 'DOWNLOADED!';
+      return 'SAVED INSTEAD';
+    }
+  }
+
+  async copyText(sum) {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': new Blob([sum.text], { type: 'text/plain' }),
+          'text/html': new Blob([sum.html], { type: 'text/html' }),
+        }),
+      ]);
+      return 'TEXT COPIED!';
+    } catch {
+      try {
+        await navigator.clipboard.writeText(sum.text);
+        return 'TEXT COPIED!';
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  // The phone's share sheet, with the card attached.
+  async nativeShare(blob, sum) {
+    const file = new File([blob], 'picks-and-shovels.png', { type: 'image/png' });
+    try {
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text: sum.text });
+      else await navigator.share({ text: sum.text });
+      return 'SHARED!';
+    } catch (err) {
+      return err?.name === 'AbortError' ? null : 'SHARE FAILED';
     }
   }
 
@@ -659,13 +702,23 @@ export class Game {
     return 'SAVED!';
   }
 
-  // Opens a prefilled tweet. Players attach the card they just copied or saved.
-  tweet(line) {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(this.shareText(line))}`;
+  // Opens a prefilled tweet. Players paste in the card they just copied.
+  tweet(sum) {
+    const text = sum.text.length > 270 ? `${sum.text.split('\n')[0]} ${sum.text.split('\n').pop()}` : sum.text;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener');
     return 'TWEETING...';
   }
 
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result);
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
 }
 
 function hashString(str) {

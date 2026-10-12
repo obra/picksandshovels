@@ -42,6 +42,27 @@ function outcomeLine(ending, date) {
   return `HYPE HIT ZERO IN ${date.year} Q${date.quarter}. FIRED.`;
 }
 
+const SITE = 'https://picksandshovels.org';
+
+function escapeHtml(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// The caption that goes with the card: plain text, and HTML with a real link.
+export function shareSummary({ ending, E, state, date }) {
+  const outcome = outcomeLine(ending, date);
+  const models = `${state.releases} model${state.releases === 1 ? '' : 's'} shipped`;
+  const stats = `Peak cash ${money(state.stats.peakCash)} · ${models}.`;
+  const ask = 'Can you keep p(doom) under 100%?';
+  const text = [`PICKS & SHOVELS: "${E.title}"`, `${outcome} ${E.subtitle}`, stats, `${ask} Play: ${SITE}`].join('\n');
+  const html =
+    `<p><b>PICKS &amp; SHOVELS</b>: &ldquo;${escapeHtml(E.title)}&rdquo;<br>` +
+    `${escapeHtml(outcome)} ${escapeHtml(E.subtitle)}<br>` +
+    `${escapeHtml(stats)}<br>` +
+    `${escapeHtml(ask)} Play: <a href="${SITE}">picksandshovels.org</a></p>`;
+  return { text, html };
+}
+
 // world: the World (we render one frame and copy its canvases).
 export async function renderShareCard({ world, state, ending, E, date }) {
   await Promise.all([document.fonts.load('20px "Press Start 2P"'), document.fonts.load('24px "Pixelify Sans"')]);

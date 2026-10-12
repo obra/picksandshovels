@@ -167,8 +167,9 @@ function stat(k, v) {
   return h('div.stat', {}, h('div.k', {}, k), h('div.v', {}, v));
 }
 
-// The share card preview and its buttons. card is a Promise<Blob>.
-function sharePanel(card, shareLine, { onShareImage, onDownload, onTweet }) {
+// The share card preview, the caption that goes with it, and the buttons.
+// card is a Promise<Blob>; summary is { text, html } from shareSummary.
+function sharePanel(card, summary, sharing) {
   const img = h('img.share-preview', { alt: 'Your PICKS & SHOVELS ending card' });
   const status = h('div.share-status', {}, 'Printing your card...');
   let blob = null;
@@ -180,26 +181,39 @@ function sharePanel(card, shareLine, { onShareImage, onDownload, onTweet }) {
   const act = (fn) => async (e) => {
     if (!blob) return;
     const btn = e.currentTarget;
-    const msg = await fn(blob, shareLine);
-    if (msg) btn.textContent = msg;
+    const label = btn.dataset.label || (btn.dataset.label = btn.textContent);
+    const msg = await fn(blob, summary);
+    if (!msg) return;
+    btn.textContent = msg;
+    setTimeout(() => (btn.textContent = label), 2600);
   };
+  const text = h('pre.share-text', { title: 'This is what COPY TEXT copies' }, summary.text);
   return h(
     'div.share',
     {},
     img,
     status,
+    text,
     h(
       'div.share-buttons',
       {},
-      h('button.btn.blue', { onclick: act(onShareImage) }, 'SHARE IMAGE'),
-      h('button.btn.ghost', { onclick: act(onDownload) }, 'DOWNLOAD'),
-      h('button.btn.ghost.tweet-btn', { onclick: act((b, line) => onTweet(line)) }, icon('bird'), 'TWEET IT'),
+      h('button.btn.blue', { onclick: act(sharing.onCopyBoth) }, 'COPY IMAGE + TEXT'),
+      h('button.btn.ghost', { onclick: act(sharing.onCopyImage) }, 'COPY IMAGE'),
+      h('button.btn.ghost', { onclick: act(sharing.onCopyText) }, 'COPY TEXT'),
     ),
+    h(
+      'div.share-buttons',
+      {},
+      navigator.share ? h('button.btn.ghost', { onclick: act(sharing.onShare) }, 'SHARE...') : null,
+      h('button.btn.ghost', { onclick: act(sharing.onDownload) }, 'DOWNLOAD'),
+      h('button.btn.ghost.tweet-btn', { onclick: act(sharing.onTweet) }, icon('bird'), 'TWEET IT'),
+    ),
+    h('div.share-hint', {}, 'Tweeting? Copy the image first, then paste it into your tweet.'),
   );
 }
 
 // Societal collapse gets the Oregon Trail treatment.
-function trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, shareLine, shareCard, sharing }) {
+function trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, summary, shareCard, sharing }) {
   const lines = h('div.trail-lines');
   const card = h(
     'div.panel.screen.trail',
@@ -218,7 +232,7 @@ function trailScreen(root, { E, date, state, newAchievements, discovered, onAgai
       `FINAL P(DOOM) ${Math.round(state.doom)}%  ·  PEAK CASH ${money(state.stats.peakCash)}  ·  MODELS SHIPPED ${state.releases}  ·  ENDINGS ${discovered}/${ENDING_IDS.length}`,
     ),
     newAchievements.length ? h('div.new-ach', {}, ...newAchievements.map((id) => h('span.chip.good', {}, ACHIEVEMENT_BY_ID[id]?.name || id))) : null,
-    sharePanel(shareCard, shareLine, sharing),
+    sharePanel(shareCard, summary, sharing),
     h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'TRY THE TRAIL AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'MAIN MENU')),
   );
   const el = modal(root, card);
@@ -234,7 +248,7 @@ function trailScreen(root, { E, date, state, newAchievements, discovered, onAgai
   return () => el.remove();
 }
 
-export function endingScreen(root, { content, ending, endingKey, state, sim, newAchievements, discovered, onAgain, onTitle, shareCard, sharing }) {
+export function endingScreen(root, { content, ending, endingKey, state, sim, newAchievements, discovered, onAgain, onTitle, summary, shareCard, sharing }) {
   const E = content.endings[endingKey] || content.endings.generic;
   const good = ending.type === 'survive';
   const date = sim.date(state);
@@ -242,14 +256,7 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
   let lines = [...E.epitaph];
   if (state.flags.bunker && ending.type === 'doom') lines.push('You watched it all from a bunker in New Zealand. The Wi-Fi was excellent. The beans ran out in March.');
   if (ending.singularity) lines.unshift(`At the singularity you rolled ${ending.roll} against p(doom) ${ending.doomAtRoll}%.`);
-  const shareLine = good
-    ? `I survived the AI singularity with p(doom) at ${ending.doomAtRoll}%.`
-    : ending.type === 'winter'
-      ? `I let the AI hype hit zero and got fired in ${date.year}. The Valley is a ghost town.`
-      : ending.type === 'collapse'
-        ? `The AI bubble popped, society collapsed, and I died of dysentery in ${date.year}.`
-        : `I ended the world (${E.title}) in ${date.year} Q${date.quarter}.`;
-  if (ending.type === 'collapse') return trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, shareLine, shareCard, sharing });
+  if (ending.type === 'collapse') return trailScreen(root, { E, date, state, newAchievements, discovered, onAgain, onTitle, summary, shareCard, sharing });
   const card = h(
     'div.panel.screen.ending',
     {},
@@ -272,7 +279,7 @@ export function endingScreen(root, { content, ending, endingKey, state, sim, new
       ? h('div', {}, h('div', { style: { fontFamily: 'var(--display)', fontSize: '9px', margin: '6px 0' } }, 'NEW ACHIEVEMENTS'), h('div.new-ach', {}, ...newAchievements.map((id) => h('span.chip.good', { title: ACHIEVEMENT_BY_ID[id]?.desc }, ACHIEVEMENT_BY_ID[id]?.name || id))))
       : null,
     h('div', { style: { fontFamily: 'var(--display)', fontSize: '9px', marginTop: '8px' } }, `ENDINGS DISCOVERED ${discovered}/${ENDING_IDS.length}`),
-    sharePanel(shareCard, shareLine, sharing),
+    sharePanel(shareCard, summary, sharing),
     h('div.title-buttons', {}, h('button.btn.big', { onclick: onAgain }, 'PLAY AGAIN'), h('button.btn.big.ghost', { onclick: onTitle }, 'MAIN MENU')),
   );
   const el = modal(root, card);
