@@ -30,7 +30,9 @@
         ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-3GPZ97R6P1';
         document.head.appendChild(ga);
         gtag('js', new Date());
-        gtag('config', 'G-3GPZ97R6P1');
+        // src/journey.js sends a named page_view for every screen, the first one included,
+        // so the tag's automatic page_view would count each visit twice.
+        gtag('config', 'G-3GPZ97R6P1', { send_page_view: false });
       }
     </script>
   </head>
